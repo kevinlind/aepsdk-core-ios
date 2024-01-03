@@ -15,6 +15,11 @@ import Foundation
 
 // MARK: - ExtensionContainer
 
+struct SharedStateContainer {
+    var sharedState: SharedState
+    var xdmSharedState: SharedState
+}
+
 /// Contains an `Extension` and additional information related to the extension
 class ExtensionContainer {
     private static let LOG_TAG = "ExtensionContainer"
@@ -29,6 +34,9 @@ class ExtensionContainer {
     var xdmSharedState: SharedState?
 
     var sharedStateName: String = "invalidSharedStateName"
+    
+    var extensionName: String = "invalidSharedStateName"
+    let sharedStates: ThreadSafeDictionary<String, SharedStateContainer>
 
     /// The extension's dispatch queue
     let extensionQueue: DispatchQueue
@@ -61,6 +69,7 @@ class ExtensionContainer {
     init(_ name: String, _ type: Extension.Type, _ queue: DispatchQueue, completion: @escaping (EventHubError?) -> Void) {
         extensionQueue = queue
         self.containerQueue = DispatchQueue(label: "\(name).containerqueue")
+        sharedStates = ThreadSafeDictionary<String, SharedStateContainer>()
         eventOrderer = OperationOrderer<Event>()
         eventListeners = ThreadSafeArray<EventListenerContainer>()
         eventOrderer.setHandler(eventProcessor)
@@ -77,9 +86,33 @@ class ExtensionContainer {
             self.sharedState = SharedState(unwrappedExtension.name)
             self.xdmSharedState = SharedState("xdm.\(unwrappedExtension.name)")
             self.sharedStateName = unwrappedExtension.name
+            self.extensionName = unwrappedExtension.name
             unwrappedExtension.onRegistered()
             self.eventOrderer.start()
             completion(nil)
+        }
+    }
+    
+    func initializeSharedStateWith(namespace: String?) {
+        var sharedStateName = getSharedStateName(namespace)
+        
+        if (sharedStates.keys.contains(sharedStateName)) {
+            return
+        }
+        
+        let container = SharedStateContainer(
+            sharedState: SharedState(sharedStateName),
+            xdmSharedState: SharedState("xdm.\(sharedStateName)")
+        )
+        
+        sharedStates[sharedStateName] = container
+    }
+    
+    func getSharedStateName(_ namespace: String?) -> String {
+        if let namespace = namespace {
+            return "\(extensionName)%%\(namespace)"
+        } else {
+            return extensionName
         }
     }
 
@@ -93,6 +126,22 @@ class ExtensionContainer {
         case .xdm:
             return xdmSharedState
         }
+    }
+    
+    func sharedState(for type: SharedStateType, namespace: String?) -> SharedState? {
+        var name = getSharedStateName(namespace)
+        var stateContainer = sharedStates[name]
+        
+        if let stateContainer = stateContainer {
+            switch type {
+            case .standard:
+                return stateContainer.sharedState
+            case .xdm:
+                return stateContainer.xdmSharedState
+            }
+        }
+        
+        return nil
     }
 }
 
@@ -117,7 +166,8 @@ extension ExtensionContainer: ExtensionRuntime {
         EventHub.shared.dispatch(event: event)
     }
 
-    func createSharedState(data: [String: Any], event: Event?) {
+    func createSharedState(data: [String: Any], event: Event?, namespace: String?) {
+        let sharedStateName = getSharedStateName(namespace)
         EventHub.shared.createSharedState(extensionName: sharedStateName, data: data, event: event)
     }
 

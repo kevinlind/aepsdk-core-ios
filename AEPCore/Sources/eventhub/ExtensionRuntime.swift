@@ -49,7 +49,7 @@ public protocol ExtensionRuntime {
     /// - Parameters:
     ///   - data: Data for the `SharedState`
     ///   - event: `Event` for which the `SharedState` should be versioned
-    func createSharedState(data: [String: Any], event: Event?)
+    func createSharedState(data: [String: Any], event: Event?, namespace: String?)
 
     /// Creates a pending `SharedState` versioned at `event`
     /// If `event` is nil, one of two behaviors will be observed:
