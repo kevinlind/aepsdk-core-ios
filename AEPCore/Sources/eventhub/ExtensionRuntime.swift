@@ -49,7 +49,9 @@ public protocol ExtensionRuntime {
     /// - Parameters:
     ///   - data: Data for the `SharedState`
     ///   - event: `Event` for which the `SharedState` should be versioned
-    func createSharedState(data: [String: Any], event: Event?, namespace: String?)
+    func createSharedState(data: [String: Any], event: Event?)
+    
+    func createSharedState(for namespace: String?, data: [String: Any], event: Event?)
 
     /// Creates a pending `SharedState` versioned at `event`
     /// If `event` is nil, one of two behaviors will be observed:
@@ -76,6 +78,10 @@ public protocol ExtensionRuntime {
     /// - Returns: A `SharedStateResult?` for the requested `extensionName` and `event`
     func getSharedState(extensionName: String, event: Event?, barrier: Bool, resolution: SharedStateResolution) -> SharedStateResult?
 
+    
+    func getSharedState(for namespace: String?, extensionName: String, event: Event?, barrier: Bool, resolution: SharedStateResolution) -> SharedStateResult?
+
+    
     // MARK: - XDM Shared State
 
     /// Creates a new XDM SharedState for this extension.

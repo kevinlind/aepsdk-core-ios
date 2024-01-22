@@ -421,12 +421,14 @@ final class EventHub {
     ///   - sharedStateType: The type of shared state to be read from, if not provided defaults to `.standard`
     /// - Returns: A `(SharedState, Int)?` containing the state for the provided extension and its version number
     private func versionSharedState(extensionName: String, event: Event?, sharedStateType: SharedStateType = .standard) -> (SharedState, Int)? {
-        guard let extensionContainer = registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(extensionName) == .orderedSame })?.value else {
+        let extensionNameSplit = extensionName.split{ $0 == "%" }.map(String.init)
+        guard let extensionContainer = registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(extensionNameSplit[0]) == .orderedSame })?.value else {
             Log.error(label: LOG_TAG, "Extension \(extensionName) not registered with EventHub")
             return nil
         }
 
-        guard let sharedState = extensionContainer.sharedState(for: sharedStateType) else { return nil }
+        let namespace: String? = extensionNameSplit.count > 1 ? extensionNameSplit[1] : nil
+        guard let sharedState = extensionContainer.sharedState(for: sharedStateType, namespace: namespace) else { return nil }
 
         var version = 0 // default to version 0
         // attempt to version at the event

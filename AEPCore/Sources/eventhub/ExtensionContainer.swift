@@ -94,7 +94,7 @@ class ExtensionContainer {
     }
     
     func initializeSharedStateWith(namespace: String?) {
-        var sharedStateName = getSharedStateName(namespace)
+        let sharedStateName = getSharedStateName(namespace)
         
         if (sharedStates.keys.contains(sharedStateName)) {
             return
@@ -110,7 +110,7 @@ class ExtensionContainer {
     
     func getSharedStateName(_ namespace: String?) -> String {
         if let namespace = namespace {
-            return "\(extensionName)%%\(namespace)"
+            return "\(extensionName)%\(namespace)"
         } else {
             return extensionName
         }
@@ -129,8 +129,14 @@ class ExtensionContainer {
     }
     
     func sharedState(for type: SharedStateType, namespace: String?) -> SharedState? {
-        var name = getSharedStateName(namespace)
-        var stateContainer = sharedStates[name]
+        let name = getSharedStateName(namespace)
+        
+        // Initialize SharedState object when requested
+        if sharedStates[name] == nil {
+            initializeSharedStateWith(namespace: namespace)
+        }
+        
+        let stateContainer = sharedStates[name]
         
         if let stateContainer = stateContainer {
             switch type {
@@ -143,6 +149,7 @@ class ExtensionContainer {
         
         return nil
     }
+    
 }
 
 // MARK: - ExtensionContainer public extension
@@ -166,7 +173,11 @@ extension ExtensionContainer: ExtensionRuntime {
         EventHub.shared.dispatch(event: event)
     }
 
-    func createSharedState(data: [String: Any], event: Event?, namespace: String?) {
+    func createSharedState(data: [String: Any], event: Event?) {
+        createSharedState(for: nil, data: data, event: event)
+    }
+    
+    func createSharedState(for namespace: String?, data: [String: Any], event: Event?) {
         let sharedStateName = getSharedStateName(namespace)
         EventHub.shared.createSharedState(extensionName: sharedStateName, data: data, event: event)
     }
@@ -182,6 +193,16 @@ extension ExtensionContainer: ExtensionRuntime {
     func getSharedState(extensionName: String, event: Event?, barrier: Bool = true, resolution: SharedStateResolution = .any) -> SharedStateResult? {
         return EventHub.shared.getSharedState(extensionName: extensionName, event: event, barrier: barrier, resolution: resolution)
     }
+    
+    func getSharedState(for namespace: String?, extensionName: String, event: Event?, barrier: Bool = true, resolution: SharedStateResolution = .any) -> SharedStateResult? {
+        var name = extensionName
+        if let namespace = namespace {
+            name = "\(name)%\(namespace)"
+        }
+        
+        return EventHub.shared.getSharedState(extensionName: name, event: event, barrier: barrier, resolution: resolution)
+    }
+
 
     func createXDMSharedState(data: [String: Any], event: Event?) {
         EventHub.shared.createSharedState(extensionName: sharedStateName, data: data, event: event, sharedStateType: .xdm)
