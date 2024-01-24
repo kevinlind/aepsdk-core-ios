@@ -261,7 +261,10 @@ final class EventHub {
     func getSharedState(extensionName: String, event: Event?, barrier: Bool = true, resolution: SharedStateResolution = .any, sharedStateType: SharedStateType = .standard) -> SharedStateResult? {
         return eventHubQueue.sync { [weak self] in
             guard let self = self else { return nil }
-            guard let container = self.registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(extensionName) == .orderedSame })?.value, let sharedState = container.sharedState(for: sharedStateType) else {
+            
+            let (parsedExtensionName, stateNamespace) = parseExtensionName(extensionName)
+            
+            guard let container = self.registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(parsedExtensionName) == .orderedSame })?.value, let sharedState = container.sharedState(for: sharedStateType, namespace: stateNamespace) else {
                 Log.warning(label: self.LOG_TAG, "Unable to retrieve \(sharedStateType.rawValue) shared state for \(extensionName). No such extension is registered.")
                 return nil
             }
@@ -421,14 +424,16 @@ final class EventHub {
     ///   - sharedStateType: The type of shared state to be read from, if not provided defaults to `.standard`
     /// - Returns: A `(SharedState, Int)?` containing the state for the provided extension and its version number
     private func versionSharedState(extensionName: String, event: Event?, sharedStateType: SharedStateType = .standard) -> (SharedState, Int)? {
-        let extensionNameSplit = extensionName.split{ $0 == "%" }.map(String.init)
-        guard let extensionContainer = registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(extensionNameSplit[0]) == .orderedSame })?.value else {
+        // Shared State name is "<extension name>%<state namespace>"
+        let (parsedExtensionName, stateNamespace) = parseExtensionName(extensionName)
+        guard let extensionContainer = registeredExtensions.first(where: { $1.sharedStateName.caseInsensitiveCompare(parsedExtensionName) == .orderedSame })?.value else {
             Log.error(label: LOG_TAG, "Extension \(extensionName) not registered with EventHub")
             return nil
         }
 
-        let namespace: String? = extensionNameSplit.count > 1 ? extensionNameSplit[1] : nil
-        guard let sharedState = extensionContainer.sharedState(for: sharedStateType, namespace: namespace) else { return nil }
+        // Get shared state instance from extension container for the given namespace
+        // A nil namespace retrieves the default "unnamed" shared state
+        guard let sharedState = extensionContainer.sharedState(for: sharedStateType, namespace: stateNamespace) else { return nil }
 
         var version = 0 // default to version 0
         // attempt to version at the event
@@ -475,6 +480,14 @@ final class EventHub {
         }
 
         return 0
+    }
+    
+    private func parseExtensionName(_ extensionName: String) -> (extensionName: String, stateNamespace: String?) {
+        // Shared State name is "<extension name>%<state namespace>"
+        let extensionNameSplit = extensionName.split{ $0 == "%" }.map(String.init)
+        let stateNamespace: String? = extensionNameSplit.count > 1 ? extensionNameSplit[1] : nil
+        
+        return (extensionName: extensionNameSplit[0], stateNamespace: stateNamespace)
     }
 }
 

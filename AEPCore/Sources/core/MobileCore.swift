@@ -65,7 +65,7 @@ public final class MobileCore: NSObject {
 
         // Register native extensions
         let registeredCounter = AtomicCounter()
-        let allExtensions = [Configuration.self] + extensions
+        let allExtensions = [States.self] + [Configuration.self] + extensions
         let nativeExtensions = allExtensions.filter({$0.self is Extension.Type}) as? [Extension.Type] ?? []
 
         nativeExtensions.forEach {
