@@ -17,6 +17,7 @@ import Foundation
 struct ConfigurationDownloader: ConfigurationDownloadable {
 
     private let logTag = "ConfigurationDownloader"
+    let log: TenantLogger
 
     /// Retrieves a configuration Dictionary from the provided `filePath`
     /// If the provided `filePath` is invalid or if does not contain valid JSON, `nil` is returned.
@@ -24,7 +25,7 @@ struct ConfigurationDownloader: ConfigurationDownloadable {
     /// - Returns: An optional Dictionary containing an SDK configuration
     func loadConfigFrom(filePath: String) -> [String: Any]? {
         guard let data = try? String(contentsOfFile: filePath).data(using: .utf8) else {
-            Log.error(label: logTag, "Failed to load config from file path: \(filePath)")
+            log.error(label: logTag, "Failed to load config from file path: \(filePath)")
             return nil
         }
         let decoded = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
@@ -38,7 +39,7 @@ struct ConfigurationDownloader: ConfigurationDownloadable {
     func loadDefaultConfigFromManifest() -> [String: Any]? {
         let systemInfoService = ServiceProvider.shared.systemInfoService
         guard let data = systemInfoService.getAsset(fileName: ConfigurationConstants.CONFIG_BUNDLED_FILE_NAME, fileType: "json")?.data(using: .utf8) else {
-            Log.error(label: logTag, "Loading config from manifest failed")
+            log.error(label: logTag, "Loading config from manifest failed")
             return nil
         }
         let decoded = try? JSONDecoder().decode([String: AnyCodable].self, from: data)
@@ -66,7 +67,7 @@ struct ConfigurationDownloader: ConfigurationDownloadable {
     ///   - completion: A closure that accepts an optional Dictionary containing configuration information.
     func loadConfigFromUrl(appId: String, dataStore: NamedCollectionDataStore, completion: @escaping ([String: Any]?) -> Void) {
         guard !appId.isEmpty, let url = URL(string: ConfigurationConstants.CONFIG_URL_BASE + appId + ".json") else {
-            Log.error(label: logTag, "Failed to load config from URL: \(ConfigurationConstants.CONFIG_URL_BASE + appId + ".json")")
+            log.error(label: logTag, "Failed to load config from URL: \(ConfigurationConstants.CONFIG_URL_BASE + appId + ".json")")
             completion(nil)
             return
         }
@@ -94,7 +95,7 @@ struct ConfigurationDownloader: ConfigurationDownloadable {
                 dataStore.setObject(key: self.buildCacheKey(appId: appId), value: config) // cache config
                 completion(AnyCodable.toAnyDictionary(dictionary: config.cacheable))
             } else {
-                Log.error(label: self.logTag, "Loading config from URL \(url.absoluteString) failed with response code: \(httpConnection.responseCode as Int?)")
+                log.error(label: self.logTag, "Loading config from URL \(url.absoluteString) failed with response code: \(httpConnection.responseCode as Int?)")
                 completion(nil)
             }
         }

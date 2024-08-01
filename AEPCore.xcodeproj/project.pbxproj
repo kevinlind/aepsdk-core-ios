@@ -466,6 +466,11 @@
 		BF4A709E26CCCF5500612434 /* RulesEngineIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4A709D26CCCF5400612434 /* RulesEngineIntegrationTests.swift */; };
 		BF4A70AE26CCD27900612434 /* rules_dispatch_consequence.json in Resources */ = {isa = PBXBuildFile; fileRef = BF4A70AD26CCD27900612434 /* rules_dispatch_consequence.json */; };
 		BF4A70BE26CCD30800612434 /* rules_dispatch_consequence.zip in Resources */ = {isa = PBXBuildFile; fileRef = BF4A70BD26CCD30800612434 /* rules_dispatch_consequence.zip */; };
+<<<<<<< HEAD
+=======
+		BFF3173D2C459FDA00777817 /* ExtensionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */; };
+		BFF317412C546FFD00777817 /* TenantLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317402C546FFD00777817 /* TenantLogger.swift */; };
+>>>>>>> 0847ee9 (Add TenantLogger as logging utility for tenant aware extensions.)
 		C0FC8CAF8ADDBE9FBAE4C374 /* Pods_AEPLifecycleTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D83561969E15C045AEBC014 /* Pods_AEPLifecycleTests.framework */; };
 		D42C989C26CAE6DA002E3184 /* LifecycleV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */; };
 		D42C989E26CAE790002E3184 /* LifecycleV2Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */; };
@@ -1188,6 +1193,11 @@
 		BF4A709D26CCCF5400612434 /* RulesEngineIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesEngineIntegrationTests.swift; sourceTree = "<group>"; };
 		BF4A70AD26CCD27900612434 /* rules_dispatch_consequence.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = rules_dispatch_consequence.json; sourceTree = "<group>"; };
 		BF4A70BD26CCD30800612434 /* rules_dispatch_consequence.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = rules_dispatch_consequence.zip; sourceTree = "<group>"; };
+<<<<<<< HEAD
+=======
+		BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionServiceProvider.swift; sourceTree = "<group>"; };
+		BFF317402C546FFD00777817 /* TenantLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenantLogger.swift; sourceTree = "<group>"; };
+>>>>>>> 0847ee9 (Add TenantLogger as logging utility for tenant aware extensions.)
 		CBB1F735C1AAEA1CD448B2C0 /* Pods-AEPLifecycleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AEPLifecycleTests.debug.xcconfig"; path = "Target Support Files/Pods-AEPLifecycleTests/Pods-AEPLifecycleTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2.swift; sourceTree = "<group>"; };
 		D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2Constants.swift; sourceTree = "<group>"; };
@@ -1698,6 +1708,7 @@
 				3F0397A924BE5FF30019F095 /* LogLevel.swift */,
 				3F0397A724BE5FF30019F095 /* Logging.swift */,
 				3F0397AD24BE5FF30019F095 /* LoggingService.swift */,
+				BFF317402C546FFD00777817 /* TenantLogger.swift */,
 			);
 			path = log;
 			sourceTree = "<group>";
@@ -2024,6 +2035,10 @@
 				3FB66AAB24CA004400502CAF /* SharedState.swift */,
 				217E220424D1FD7900B70B3E /* SharedStateResult.swift */,
 				21A6737225434AE600A7E906 /* SharedStateType.swift */,
+<<<<<<< HEAD
+=======
+				BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */,
+>>>>>>> 0847ee9 (Add TenantLogger as logging utility for tenant aware extensions.)
 			);
 			path = eventhub;
 			sourceTree = "<group>";
@@ -3402,6 +3417,7 @@
 				24C5E15D26B990CB005BEA72 /* MessageGesture.swift in Sources */,
 				24C5E14D26B8B00B005BEA72 /* MessageSettings.swift in Sources */,
 				2EF54C262BF6C69800685C07 /* URLError+Recoverable.swift in Sources */,
+				BFF317412C546FFD00777817 /* TenantLogger.swift in Sources */,
 				3F0397DB24BE5FF30019F095 /* NamedCollectionDataStore.swift in Sources */,
 				3F0397C524BE5FF30019F095 /* CacheEntry.swift in Sources */,
 				3F0397F524BE60910019F095 /* AtomicCounter.swift in Sources */,

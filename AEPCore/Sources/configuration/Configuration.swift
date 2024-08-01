@@ -28,16 +28,22 @@ class Configuration: NSObject, Extension {
     private let retryQueue = DispatchQueue(label: "com.adobe.configuration.retry")
     private let rulesEngineName = "\(ConfigurationConstants.EXTENSION_NAME).rulesengine"
     private var retryConfigurationCounter: Double = 1
+    private let log: TenantLogger // ExtensionLog instance for convienence
 
     // MARK: - Extension
 
     /// Initializes the Configuration extension and it's dependencies
     required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
+        self.log = runtime.getServiceProvider().getLog()
         rulesEngine = LaunchRulesEngine(name: rulesEngineName, extensionRuntime: runtime)
 
-        appIdManager = LaunchIDManager(dataStore: dataStore)
-        configState = ConfigurationState(dataStore: dataStore, configDownloader: ConfigurationDownloader())
+        dataStore = runtime.getServiceProvider().getNamedCollectionDataStore(name: ConfigurationConstants.DATA_STORE_NAME)
+        appIdManager = LaunchIDManager(dataStore: dataStore, log: log)
+        configState = ConfigurationState(extensionRuntime: runtime,
+                                         dataStore: dataStore,
+                                         configDownloader: ConfigurationDownloader(log: log),
+                                         appIdManager: appIdManager)
     }
 
     /// Invoked when the Configuration extension has been registered by the `EventHub`, this results in the Configuration extension loading the first configuration for the SDK
@@ -59,7 +65,7 @@ class Configuration: NSObject, Extension {
             createSharedState(data: config, event: nil)
             // notify rules engine to load cached rules
             if let rulesURLString = config[ConfigurationConstants.Keys.RULES_URL] as? String {
-                Log.trace(label: name, "Reading rules from cache for URL: \(rulesURLString)")
+                log.trace(label: name, "Reading rules from cache for URL: \(rulesURLString)")
                 if !rulesEngine.replaceRulesWithCache(from: rulesURLString) {
                     if let url = Bundle.main.url(forResource: RulesDownloaderConstants.RULES_BUNDLED_FILE_NAME, withExtension: "zip") {
                         // Attempt to load rules from manifest if none in cache
@@ -107,7 +113,7 @@ class Configuration: NSObject, Extension {
     private func processUpdateConfig(event: Event, sharedStateResolver: SharedStateResolver) {
         // Update the overriddenConfig with the new config from API and persist them in disk, and abort if overridden config is empty
         guard let updatedConfig = event.data?[ConfigurationConstants.Keys.UPDATE_CONFIG] as? [String: Any], !updatedConfig.isEmpty else {
-            Log.warning(label: name, "Overriden config is empty, resolving pending shared state with current config")
+            log.warning(label: name, "Overriden config is empty, resolving pending shared state with current config")
             sharedStateResolver(configState.environmentAwareConfiguration)
             return
         }
@@ -125,7 +131,7 @@ class Configuration: NSObject, Extension {
     private func processConfigureWith(appId: String, event: Event, sharedStateResolver: @escaping SharedStateResolver) {
         guard !appId.isEmpty else {
             // Error: No appId provided or its empty, resolve pending shared state with current config
-            Log.warning(label: name, "No AppID provided or it is empty, resolving pending shared state with current config")
+            log.warning(label: name, "No AppID provided or it is empty, resolving pending shared state with current config")
             appIdManager.removeAppIdFromPersistence()
             sharedStateResolver(configState.environmentAwareConfiguration)
             return
@@ -138,7 +144,7 @@ class Configuration: NSObject, Extension {
         }
 
         guard !isStaleAppIdUpdateRequest(newAppId: appId, isInternalEvent: event.isInternalConfigEvent) else {
-            Log.debug(label: name, "An explicit configureWithAppId request has preceded this internal event.")
+            log.debug(label: name, "An explicit configureWithAppId request has preceded this internal event.")
             return
         }
 
@@ -154,7 +160,7 @@ class Configuration: NSObject, Extension {
                 sharedStateResolver(self.configState.environmentAwareConfiguration)
                 self.startEvents()
                 let retryInterval = self.retryConfigurationCounter * 5
-                Log.trace(label: self.name, "Downloading config failed, trying again after \(retryInterval) secs")
+                log.trace(label: self.name, "Downloading config failed, trying again after \(retryInterval) secs")
                 self.retryQueue.asyncAfter(deadline: .now() + retryInterval) {
                     let event = Event(name: CoreConstants.EventNames.CONFIGURE_WITH_APP_ID, type: EventType.configuration, source: EventSource.requestContent,
                                       data: [CoreConstants.Keys.JSON_APP_ID: appId, CoreConstants.Keys.IS_INTERNAL_EVENT: true])
@@ -194,7 +200,7 @@ class Configuration: NSObject, Extension {
     private func processConfigureWith(filePath: String, event: Event, sharedStateResolver: SharedStateResolver) {
         guard let filePath = event.data?[ConfigurationConstants.Keys.JSON_FILE_PATH] as? String, !filePath.isEmpty else {
             // Error: Shared state is updated with previous config
-            Log.warning(label: name, "Loaded configuration from file path was empty, using previous config.")
+            log.warning(label: name, "Loaded configuration from file path was empty, using previous config.")
             sharedStateResolver(configState.environmentAwareConfiguration)
             return
         }

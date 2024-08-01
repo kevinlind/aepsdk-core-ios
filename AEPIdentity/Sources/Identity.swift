@@ -21,23 +21,26 @@ import Foundation
     public static let extensionVersion = IdentityConstants.EXTENSION_VERSION
     public let metadata: [String: String]? = nil
     private(set) var state: IdentityState?
+    
+    private let log: TenantLogger
 
     // MARK: Extension
 
     public required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
+        self.log = TenantLogger(tenantId: runtime.getTenantId()) // Example of using ExtensionLog by passing ID directly and not from Service Provider
         super.init()
 
-        guard let dataQueue = ServiceProvider.shared.dataQueueService.getDataQueue(label: name) else {
-            Log.error(label: "\(name):\(#function)", "Failed to create Data Queue, Identity could not be initialized")
+        guard let dataQueue = runtime.getServiceProvider().getDataQueue(label: name) else {
+            log.error(label: "\(name):\(#function)", "Failed to create Data Queue, Identity could not be initialized")
             return
         }
 
-        let hitQueue = PersistentHitQueue(dataQueue: dataQueue, processor: IdentityHitProcessor(responseHandler: handleNetworkResponse(hit:responseData:)))
+        let hitQueue = PersistentHitQueue(dataQueue: dataQueue, processor: IdentityHitProcessor(logger: log, responseHandler: handleNetworkResponse(hit:responseData:)), logger: log)
 
-        let dataStore = NamedCollectionDataStore(name: IdentityConstants.DATASTORE_NAME)
-        let pushIdManager = PushIDManager(dataStore: dataStore, eventDispatcher: dispatch(event:))
-        state = IdentityState(identityProperties: IdentityProperties(), hitQueue: hitQueue, pushIdManager: pushIdManager)
+        let dataStore = runtime.getServiceProvider().getNamedCollectionDataStore(name: IdentityConstants.DATASTORE_NAME)
+        let pushIdManager = PushIDManager(logger: log, dataStore: dataStore, eventDispatcher: dispatch(event:))
+        state = IdentityState(logger: log, identityProperties: IdentityProperties(), hitQueue: hitQueue, pushIdManager: pushIdManager)
     }
 
     public func onRegistered() {
@@ -64,11 +67,11 @@ import Foundation
 
         // skip waiting for latest configuration if it is getExperienceCloudId event or getIdentifiers event
         if event.isGetIdentifierEvent {
-            Log.trace(label: "\(name):\(#function)", "Processing get identifier event without waiting for configuration [event:(\(event.name)) id:(\(event.id)].")
+            log.trace(label: "\(name):\(#function)", "Processing get identifier event without waiting for configuration [event:(\(event.name)) id:(\(event.id)].")
             return true
         } else if event.isSyncEvent || event.type == EventType.genericIdentity {
             guard let configSharedState = getSharedState(extensionName: IdentityConstants.SharedStateKeys.CONFIGURATION, event: event, resolution: .lastSet)?.value else {
-                Log.trace(label: "\(name):\(#function)", "Waiting for the Configuration shared state value before processing [event:(\(event.name)) id:(\(event.id)].")
+                log.trace(label: "\(name):\(#function)", "Waiting for the Configuration shared state value before processing [event:(\(event.name)) id:(\(event.id)].")
                 return false
             }
             return state.readyForSyncIdentifiers(event: event, configurationSharedState: configSharedState)
@@ -76,7 +79,7 @@ import Foundation
             let areSharedStatesReady = MobileIdentities().areSharedStatesReady(event: event, sharedStateProvider: getSharedState(extensionName:event:))
 
             if !areSharedStatesReady {
-                Log.trace(label: "\(name):\(#function)", "Waiting for the Mobile Identities states to be set before processing [event:(\(event.name)) id:(\(event.id)].")
+                log.trace(label: "\(name):\(#function)", "Waiting for the Mobile Identities states to be set before processing [event:(\(event.name)) id:(\(event.id)].")
             }
 
             return areSharedStatesReady
@@ -84,7 +87,7 @@ import Foundation
 
             // analytics shared state will be null if analytics extension is not registered. Wait for analytics shared only if the status is pending or none
             if let analyticsSharedState = getSharedState(extensionName: IdentityConstants.SharedStateKeys.ANALYTICS, event: event), analyticsSharedState.status != .set {
-                Log.trace(label: "\(name):\(#function)", "Waiting for the Analytics shared state to be set before processing [event:(\(event.name)) id:(\(event.id)].")
+                log.trace(label: "\(name):\(#function)", "Waiting for the Analytics shared state to be set before processing [event:(\(event.name)) id:(\(event.id)].")
                 return false
             }
         }
@@ -92,7 +95,7 @@ import Foundation
         let isConfigSharedStateSet = getSharedState(extensionName: IdentityConstants.SharedStateKeys.CONFIGURATION, event: event, resolution: .lastSet)?.value != nil
 
         if !isConfigSharedStateSet {
-            Log.trace(label: "\(name):\(#function)", "Waiting for the Configuration shared state to be set before processing [event:(\(event.name)) id:(\(event.id)].")
+            log.trace(label: "\(name):\(#function)", "Waiting for the Configuration shared state to be set before processing [event:(\(event.name)) id:(\(event.id)].")
         }
 
         return isConfigSharedStateSet
@@ -143,7 +146,7 @@ import Foundation
                                                           source: EventSource.responseIdentity,
                                                           data: nil)
             dispatch(event: responseEvent)
-            Log.debug(label: "\(name):\(#function)", "Ignore Configuration Identity event, user is currently opted-out")
+            log.debug(label: "\(name):\(#function)", "Ignore Configuration Identity event, user is currently opted-out")
             return
         }
 
@@ -151,7 +154,7 @@ import Foundation
         mobileIdentities.collectIdentifiers(event: event, sharedStateProvider: getSharedState(extensionName:event:))
 
         guard let encodedIdentities = try? JSONEncoder().encode(mobileIdentities) else {
-            Log.error(label: name, "Failed to encode mobile entities, processing of configuration identity event failed.")
+            log.error(label: name, "Failed to encode mobile entities, processing of configuration identity event failed.")
             return
         }
 
@@ -174,7 +177,7 @@ import Foundation
     /// - Parameter event: The event coming from the Audience Manager extension
     private func handleAudienceResponse(event: Event) {
         if event.optOutHitSent {
-            Log.debug(label: "\(name):\(#function)", "An opt-out request will not be sent as the  Audience Manager extension has successfully sent it.")
+            log.debug(label: "\(name):\(#function)", "An opt-out request will not be sent as the  Audience Manager extension has successfully sent it.")
             return
         }
         // Identity Extension will send the opt out request because the Audience Extension did not
@@ -220,7 +223,7 @@ import Foundation
     }
 
     private func processIdentifiersRequest(event: Event) {
-        Log.trace(label: "\(name):\(#function)", "Getting  ECID and other synced custom identifiers.")
+        log.trace(label: "\(name):\(#function)", "Getting  ECID and other synced custom identifiers.")
         let eventData = state?.identityProperties.toEventData()
         let responseEvent = event.createResponseEvent(name: IdentityConstants.EventNames.IDENTITY_RESPONSE_CONTENT_ONE_TIME,
                                                       type: EventType.identity,
@@ -266,7 +269,7 @@ import Foundation
                 server = IdentityConstants.Default.SERVER
             }
 
-            Log.debug(label: "\(name):\(#function)", "Sending an opt-out request to (\(server)).")
+            log.debug(label: "\(name):\(#function)", "Sending an opt-out request to (\(server)).")
             ServiceProvider.shared.networkService.sendOptOutRequest(orgId: orgId, ecid: ecid, experienceCloudServer: server)
         }
     }

@@ -16,6 +16,7 @@ import Foundation
 /// Manages the business logic of the Identity extension
 class IdentityState {
     private let LOG_TAG = "IdentityState"
+    private let log: TenantLogger
     private var pushIdManager: PushIDManageable
     private(set) var hitQueue: HitQueuing
     #if DEBUG
@@ -35,7 +36,8 @@ class IdentityState {
     /// Creates a new `IdentityState` with the given identity properties
     /// - Parameter identityProperties: identity properties
     /// - Parameter pushIdManager: a push id manager
-    init(identityProperties: IdentityProperties, hitQueue: HitQueuing, pushIdManager: PushIDManageable) {
+    init(logger: TenantLogger, identityProperties: IdentityProperties, hitQueue: HitQueuing, pushIdManager: PushIDManageable) {
+        self.log = logger
         self.identityProperties = identityProperties
         self.hitQueue = hitQueue
         self.pushIdManager = pushIdManager
@@ -49,7 +51,7 @@ class IdentityState {
 
         // load data from local storage
         identityProperties.loadFromPersistence()
-        Log.trace(label: "\(LOG_TAG):\(#function)", "Successfully loaded the Identity data from persistence. Loaded \(identityProperties.customerIds?.count ?? 0) VisitorIds. ECID is set to \(identityProperties.ecid?.ecidString ?? "nil").")
+        log.trace(label: "\(LOG_TAG):\(#function)", "Successfully loaded the Identity data from persistence. Loaded \(identityProperties.customerIds?.count ?? 0) VisitorIds. ECID is set to \(identityProperties.ecid?.ecidString ?? "nil").")
 
         if identityProperties.ecid != nil {
             createSharedState(identityProperties.toEventData(), nil)
@@ -57,7 +59,7 @@ class IdentityState {
         }
 
         hasBooted = true
-        Log.debug(label: "\(LOG_TAG):\(#function)", "Identity has successfully booted up")
+        log.debug(label: "\(LOG_TAG):\(#function)", "Identity has successfully booted up")
     }
 
     /// Determines if there is all the required configuration and if we can force sync
@@ -71,7 +73,7 @@ class IdentityState {
         if hasSynced { return true }
 
         guard let configSharedState = configSharedState else {
-            Log.trace(label: "\(LOG_TAG):\(#function)", "Waiting for the Configuration shared state to get required configuration fields before processing [event:(\(event.name)) id:(\(event.id)].")
+            log.trace(label: "\(LOG_TAG):\(#function)", "Waiting for the Configuration shared state to get required configuration fields before processing [event:(\(event.name)) id:(\(event.id)].")
             return false
         }
 
@@ -112,7 +114,7 @@ class IdentityState {
             lastValidConfig = configurationSharedState
         } else if lastValidConfig.isEmpty {
             // can't process this event, wait for a valid config and retry later
-            Log.trace(label: "\(LOG_TAG):\(#function)", "Cannot sync Identifiers, waiting for valid configuration shared state.")
+            log.trace(label: "\(LOG_TAG):\(#function)", "Cannot sync Identifiers, waiting for valid configuration shared state.")
             return false
         }
 
@@ -129,7 +131,7 @@ class IdentityState {
     func syncIdentifiers(event: Event, forceSync: Bool = false) -> [String: Any]? {
         // sanity check, config should never be empty
         if lastValidConfig.isEmpty {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Ignoring sync identifiers request as last valid config is empty")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Ignoring sync identifiers request as last valid config is empty")
             return nil
         }
 
@@ -137,7 +139,7 @@ class IdentityState {
         let privacyStatusStr = lastValidConfig[IdentityConstants.Configuration.GLOBAL_CONFIG_PRIVACY] as? String ?? ""
         let privacyStatus = PrivacyStatus(rawValue: privacyStatusStr) ?? PrivacyStatus.unknown
         if privacyStatus == .optedOut {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Ignoring sync identifiers request as privacy is opted-out")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Ignoring sync identifiers request as privacy is opted-out")
             return nil
         }
 
@@ -172,7 +174,7 @@ class IdentityState {
         if shouldSync(customerIds: customerIds, dpids: event.dpids, forceSync: shouldForceSync || shouldAddConsentFlag, currentEventValidConfig: lastValidConfig) {
             queueHit(identityProperties: identityProperties, configSharedState: lastValidConfig, event: event, addConsentFlag: shouldAddConsentFlag)
         } else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Ignored an ID sync request because no new IDs to sync after the last request.")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Ignored an ID sync request because no new IDs to sync after the last request.")
         }
 
         // save properties
@@ -233,7 +235,7 @@ class IdentityState {
 
         // check config
         if !canSyncForCurrentConfiguration(config: currentEventValidConfig) {
-            Log.trace(label: "\(LOG_TAG):\(#function)", "Waiting for a valid configuration to sync identities.")
+            log.trace(label: "\(LOG_TAG):\(#function)", "Waiting for a valid configuration to sync identities.")
             syncForProps = false
         }
 
@@ -242,11 +244,11 @@ class IdentityState {
         let hasDpids = !(dpids?.isEmpty ?? true)
 
         if identityProperties.ecid != nil, !hasIds, !hasDpids, !needResync {
-            Log.trace(label: "\(LOG_TAG):\(#function)", "Not syncing identifiers at this time, no new identifiers or previously synced.")
+            log.trace(label: "\(LOG_TAG):\(#function)", "Not syncing identifiers at this time, no new identifiers or previously synced.")
             syncForIds = false
         } else {
             if identityProperties.ecid == nil {
-                Log.trace(label: "\(LOG_TAG):\(#function)", "ECID is nil when sync identifiers event received. Generate new ECID value.")
+                log.trace(label: "\(LOG_TAG):\(#function)", "ECID is nil when sync identifiers event received. Generate new ECID value.")
                 generateAndPersistECID()
             }
         }
@@ -296,7 +298,7 @@ class IdentityState {
     ///   - eventDispatcher: a function which when invoked dispatches an `Event` to the `EventHub`
     func handleAnalyticsResponse(event: Event, eventDispatcher: (Event) -> Void) {
         guard let aid = event.aid, !aid.isEmpty else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Analytics Tracking ID is not found or empty")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Analytics Tracking ID is not found or empty")
             return
         }
 
@@ -387,17 +389,17 @@ class IdentityState {
         }
 
         guard let orgId = configSharedState[IdentityConstants.Configuration.EXPERIENCE_CLOUD_ORGID] as? String else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, orgId is not present")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, orgId is not present")
             return
         }
 
         guard let url = URL.buildIdentityHitURL(experienceCloudServer: server, orgId: orgId, identityProperties: identityProperties, dpids: event.dpids ?? [:], addConsentFlag: addConsentFlag) else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, failed to create hit URL")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, failed to create hit URL")
             return
         }
 
         guard let hitData = try? JSONEncoder().encode(IdentityHit(url: url, event: event)) else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, failed to encode IdentityHit")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, failed to encode IdentityHit")
             return
         }
 
@@ -412,7 +414,7 @@ class IdentityState {
     ///   - event: The event responsible for the network response
     private func handleNetworkResponse(response: Data?, eventDispatcher: (Event) -> Void, createSharedState: (([String: Any], Event?) -> Void), event: Event) {
         guard let data = response, let identityResponse = try? JSONDecoder().decode(IdentityHitResponse.self, from: data) else {
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Failed to decode Identity hit response")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Failed to decode Identity hit response")
             return
         }
 
@@ -428,12 +430,12 @@ class IdentityState {
 
         // something's wrong - n/w call returned an error. update the pending state.
         if let error = identityResponse.error {
-            Log.error(label: "\(LOG_TAG):\(#function)", "Identity response returned error: \(error)")
+            log.error(label: "\(LOG_TAG):\(#function)", "Identity response returned error: \(error)")
 
             if identityProperties.ecid == nil {
                 // should never happen bc we generate ECID locally before n/w request.
                 // Still, generate ECID locally if there's none yet.
-                Log.trace(label: "\(LOG_TAG):\(#function)", "ECID is nil when network response error received. Generate new ECID value.")
+                log.trace(label: "\(LOG_TAG):\(#function)", "ECID is nil when network response error received. Generate new ECID value.")
                 generateAndPersistECID()
             }
 
@@ -452,7 +454,7 @@ class IdentityState {
                 createSharedState(identityProperties.toEventData(), event)
             }
         } else {
-            Log.trace(label: LOG_TAG, "Ignoring response for ECID: \(String(describing: identityResponse.ecid)) as it is either nil or does not match the ECID we have stored locally (\(String(describing: identityProperties.ecid?.ecidString)))")
+            log.trace(label: LOG_TAG, "Ignoring response for ECID: \(String(describing: identityResponse.ecid)) as it is either nil or does not match the ECID we have stored locally (\(String(describing: identityProperties.ecid?.ecidString)))")
         }
     }
 
@@ -461,7 +463,7 @@ class IdentityState {
         if identityProperties.ecid == nil {
             identityProperties.ecid = ECID()
             identityProperties.saveToPersistence()
-            Log.trace(label: "\(LOG_TAG):\(#function)", "Generating new ECID value \(identityProperties.ecid?.ecidString ?? "nil")")
+            log.trace(label: "\(LOG_TAG):\(#function)", "Generating new ECID value \(identityProperties.ecid?.ecidString ?? "nil")")
         }
     }
 

@@ -16,6 +16,7 @@ import Foundation
 /// A type which manages dispatching events based on Push ID changes
 struct PushIDManager: PushIDManageable {
     private let LOG_TAG = "PushIDManager"
+    private let log: TenantLogger
 
     private var pushEnabled: Bool {
         get {
@@ -42,7 +43,8 @@ struct PushIDManager: PushIDManageable {
 
     // MARK: PushIDManageable
 
-    init(dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void) {
+    init(logger: TenantLogger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void) {
+        self.log = logger
         self.dataStore = dataStore
         self.eventDispatcher = eventDispatcher
     }
@@ -50,7 +52,7 @@ struct PushIDManager: PushIDManageable {
     mutating func updatePushId(pushId: String?) {
         if !pushIdHasChanged(newPushId: pushId ?? "") {
             // Provided push token matches existing push token. Push settings will not be re-sent to Analytics
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Ignored push token \(pushId ?? "") as it matches the existing token, the push notification status will not be re-sent to Analytics.")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Ignored push token \(pushId ?? "") as it matches the existing token, the push notification status will not be re-sent to Analytics.")
             return
         }
 
@@ -63,7 +65,7 @@ struct PushIDManager: PushIDManageable {
         let isPushEnabled = pushEnabled
         if pushId?.isEmpty ?? true, !isPushEnabled {
             updatePushStatusAndSendAnalyticsEvent(enabled: false)
-            Log.trace(label: "\(LOG_TAG):\(#function)", "First time sending a.push.optin False")
+            log.trace(label: "\(LOG_TAG):\(#function)", "First time sending a.push.optin False")
         } else if pushId?.isEmpty ?? true, isPushEnabled {
             updatePushStatusAndSendAnalyticsEvent(enabled: false)
         } else if let pushId = pushId, !pushId.isEmpty, !isPushEnabled {

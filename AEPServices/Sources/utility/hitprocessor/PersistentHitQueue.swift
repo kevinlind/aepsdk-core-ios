@@ -15,6 +15,7 @@ import Foundation
 public class PersistentHitQueue: HitQueuing {
     public let processor: HitProcessing
     let dataQueue: DataQueue
+    private let log: TenantLogger
 
     private var suspended = true
     private var isTaskScheduled = false
@@ -23,9 +24,18 @@ public class PersistentHitQueue: HitQueuing {
     /// Creates a new `HitQueue` with the underlying `DataQueue` which is used to persist hits
     /// - Parameter dataQueue: a `DataQueue` used to persist hits
     /// - Parameter processor: a `HitProcessing` used to process hits
-    public init(dataQueue: DataQueue, processor: HitProcessing) {
+    /// - Parameter logger: logger for tenant instance using this `PersistentHitQueue`
+    public init(dataQueue: DataQueue, processor: HitProcessing, logger: TenantLogger) {
         self.dataQueue = dataQueue
         self.processor = processor
+        self.log = logger
+    }
+    
+    /// Creates a new `HitQueue` with the underlying `DataQueue` which is used to persist hits
+    /// - Parameter dataQueue: a `DataQueue` used to persist hits
+    /// - Parameter processor: a `HitProcessing` used to process hits
+    public convenience init(dataQueue: DataQueue, processor: HitProcessing) {
+        self.init(dataQueue: dataQueue, processor: processor, logger: TenantLogger())
     }
 
     @discardableResult
@@ -78,7 +88,7 @@ public class PersistentHitQueue: HitQueuing {
                             self.processNextHit()
                         } else {
                             // deleting the hit from the database failed
-                            Log.warning(label: "PersistentHitQueue", "An unexpected error occurred while attempting to delete a record from the database. Data processing will be paused.")
+                            self.log.warning(label: "PersistentHitQueue", "An unexpected error occurred while attempting to delete a record from the database. Data processing will be paused.")
                         }
                     }
                 } else {

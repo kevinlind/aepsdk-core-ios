@@ -17,9 +17,10 @@ import Foundation
 protocol PushIDManageable {
     /// Creates a new `PushIDManageable`
     /// - Parameters:
+    ///   - logger: logger for tenant using this `PushIDManageable`
     ///   - dataStore: the datastore to store push data in
     ///   - eventDispatcher: a function which can dispatch an `Event` to the `EventHub`
-    init(dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void)
+    init(logger: TenantLogger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void)
 
     /// Updates the push identifier
     /// - Parameter pushId: the new push identifier

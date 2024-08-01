@@ -14,6 +14,7 @@ import Foundation
 
 class IdentityHitProcessor: HitProcessing {
     private let LOG_TAG = "IdentityHitProcessor"
+    private let log: TenantLogger
 
     private let responseHandler: (IdentityHit, Data?) -> Void
     private var networkService: Networking {
@@ -22,8 +23,9 @@ class IdentityHitProcessor: HitProcessing {
 
     /// Creates a new `IdentityHitProcessor` where the `responseHandler` will be invoked after each successful processing of a hit
     /// - Parameter responseHandler: a function to be invoked with the `DataEntity` for a hit and the response data for that hit
-    init(responseHandler: @escaping (IdentityHit, Data?) -> Void) {
+    init(logger: TenantLogger, responseHandler: @escaping (IdentityHit, Data?) -> Void) {
         self.responseHandler = responseHandler
+        self.log = logger
     }
 
     // MARK: HitProcessing
@@ -59,20 +61,20 @@ class IdentityHitProcessor: HitProcessing {
         let urlString = "\(String(describing: hit.url.host))\(String(describing: hit.url.path))"
         if connection.responseCode == 200 {
             // hit sent successfully
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Identity hit request with url \(hit.url.absoluteString) sent successfully")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Identity hit request with url \(hit.url.absoluteString) sent successfully")
             responseHandler(hit, connection.data)
             completion(true)
         } else if NetworkServiceConstants.RECOVERABLE_ERROR_CODES.contains(connection.responseCode ?? -1) {
             // retry this hit later
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Retrying Identity hit, request with url \(hit.url.absoluteString) failed with error \(connection.error?.localizedDescription ?? "") and recoverable status code \(connection.responseCode ?? -1)")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Retrying Identity hit, request with url \(hit.url.absoluteString) failed with error \(connection.error?.localizedDescription ?? "") and recoverable status code \(connection.responseCode ?? -1)")
             completion(false)
         } else if let error = connection.error as? URLError, error.isRecoverable {
             // retry this hit later as the request failed with a recoverable transport error
-            Log.debug(label: "\(LOG_TAG):\(#function)", "Retrying Identity hit, request with url \(urlString) failed with error \(connection.error?.localizedDescription ?? "") and recoverable status code \(connection.responseCode ?? -1)")
+            log.debug(label: "\(LOG_TAG):\(#function)", "Retrying Identity hit, request with url \(urlString) failed with error \(connection.error?.localizedDescription ?? "") and recoverable status code \(connection.responseCode ?? -1)")
             completion(false)
         } else {
             // unrecoverable error. delete the hit from the database and continue
-            Log.warning(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, request with url \(urlString) failed with error \(connection.error?.localizedDescription ?? "") and unrecoverable status code \(connection.responseCode ?? -1)")
+            log.warning(label: "\(LOG_TAG):\(#function)", "Dropping Identity hit, request with url \(urlString) failed with error \(connection.error?.localizedDescription ?? "") and unrecoverable status code \(connection.responseCode ?? -1)")
             responseHandler(hit, connection.data)
             completion(true)
         }
