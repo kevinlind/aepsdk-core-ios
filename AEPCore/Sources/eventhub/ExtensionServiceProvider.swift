@@ -18,28 +18,27 @@ import AEPServices
 @objc(AEPExtensionServiceProvider)
 public class ExtensionServiceProvider: NSObject {
     
-    private let tenantId: String
+    private let tenant: Tenant
     
     // TODO - store service instances in variable so they are created once.
-    
-    init(id: String) {
-        tenantId = id
+    init(tenant: Tenant) {
+        self.tenant = tenant
     }
     
     public func getNamedCollectionDataStore(name: String) -> NamedCollectionDataStore {
-        return NamedCollectionDataStore(name: "\(name).\(tenantId)")
+        return NamedCollectionDataStore(name: name.tenantAwareName(for: tenant))
     }
     
     public func getDataQueue(label: String) -> DataQueue? {
-        return ServiceProvider.shared.dataQueueService.getDataQueue(label: "\(label).\(tenantId)")
+        return ServiceProvider.shared.dataQueueService.getDataQueue(label: label.tenantAwareName(for: tenant))
     }
     
     public func getCache(name: String) -> Cache {
-        return Cache(name: "\(name).\(tenantId)")
+        return Cache(name: name.tenantAwareName(for: tenant))
     }
     
     public func getLog() -> TenantLogger {
-        return TenantLogger(tenantId: tenantId)
+        return TenantLogger(tenantId: tenant.id)
     }
     
     // TODO - create wrapper for Networking service to pass in tenant ID

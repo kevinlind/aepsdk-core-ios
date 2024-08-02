@@ -57,8 +57,13 @@ class ExtensionContainer {
         get { containerQueue.sync { self._lastProcessedEvent } }
         set { containerQueue.async { self._lastProcessedEvent = newValue } }
     }
-
-    init(_ name: String, _ type: Extension.Type, _ queue: DispatchQueue, completion: @escaping (EventHubError?) -> Void) {
+    
+    private let tenant: Tenant
+    private let serviceProvider: ExtensionServiceProvider
+    
+    init(_ tenant: Tenant, _ name: String, _ type: Extension.Type, _ queue: DispatchQueue, completion: @escaping (EventHubError?) -> Void) {
+        self.tenant = tenant
+        serviceProvider = ExtensionServiceProvider(tenant: tenant)
         extensionQueue = queue
         containerQueue = DispatchQueue(label: "\(name).containerQueue")
         eventOrderer = OperationOrderer<Event>("\(name).operationOrderer")
@@ -163,6 +168,14 @@ extension ExtensionContainer: ExtensionRuntime {
 
     func shutdown() {
         eventOrderer.waitToStop()
+    }
+    
+    func getServiceProvider() -> ExtensionServiceProvider {
+        return serviceProvider
+    }
+    
+    func getTenantId() -> String? {
+        return tenant.id
     }
 }
 

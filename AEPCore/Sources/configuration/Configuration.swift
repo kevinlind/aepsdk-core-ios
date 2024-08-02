@@ -21,7 +21,7 @@ class Configuration: NSObject, Extension {
     public static let extensionVersion = ConfigurationConstants.EXTENSION_VERSION
     let metadata: [String: String]? = nil
 
-    private let dataStore = NamedCollectionDataStore(name: ConfigurationConstants.DATA_STORE_NAME)
+    private let dataStore: NamedCollectionDataStore
     private var appIdManager: LaunchIDManager
     private var configState: ConfigurationState // should only be modified/used within the event queue
     private let rulesEngine: LaunchRulesEngine

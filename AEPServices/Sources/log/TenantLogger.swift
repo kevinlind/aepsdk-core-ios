@@ -18,7 +18,7 @@ public class TenantLogger {
     
     public init(tenantId: String? = nil) {
         if let tenantId = tenantId {
-            self.tenantLabel = " [tenant: \(tenantId)]"
+            self.tenantLabel = "-\(tenantId)"
         } else {
             self.tenantLabel = ""
         }
