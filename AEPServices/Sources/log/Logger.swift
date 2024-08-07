@@ -11,52 +11,29 @@
  governing permissions and limitations under the License.
 */
 
-/// Tenant aware logging service.
-public class TenantLogger : Logger {
+public protocol Logger {
     
-    private let tenantLabel: String
-    
-    public init(tenantId: String? = nil) {
-        if let tenantId = tenantId {
-            self.tenantLabel = "-\(tenantId)"
-        } else {
-            self.tenantLabel = ""
-        }
-    }
-
     /// Used to print more verbose information.
     /// - Parameters:
     ///   - label: the name of the label to localize message
     ///   - message: the string to be logged
-    public func trace(label: String, _ message: String) {
-        Log.trace(label: addId(to: label), message)
-    }
+    func trace(label: String, _ message: String)
 
     /// Information provided to the debug method should contain high-level details about the data being processed
     /// - Parameters:
     ///   - label: the name of the label to localize message
     ///   - message: the string to be logged
-    public func debug(label: String, _ message: String) {
-        Log.debug(label: addId(to: label), message)
-    }
+    func debug(label: String, _ message: String)
 
     /// Information provided to the warning method indicates that a request has been made to the SDK, but the SDK will be unable to perform the requested task
     /// - Parameters:
     ///   - label: the name of the label to localize message
     ///   - message: the string to be logged
-    public func warning(label: String, _ message: String) {
-        Log.warning(label: addId(to: label), message)
-    }
+    func warning(label: String, _ message: String)
 
     /// Information provided to the error method indicates that there has been an unrecoverable error
     /// - Parameters:
     ///   - label: the name of the label to localize message
     ///   - message: the string to be logged
-    public func error(label: String, _ message: String) {
-        Log.error(label: addId(to: label), message)
-    }
-    
-    private func addId(to label: String) -> String {
-        return "\(label)\(tenantLabel)"
-    }
+    func error(label: String, _ message: String)
 }

@@ -37,7 +37,7 @@ public class ExtensionServiceProvider: NSObject {
         return Cache(name: name.tenantAwareName(for: tenant))
     }
     
-    public func getLog() -> TenantLogger {
+    public func getLog() -> Logger {
         return TenantLogger(tenantId: tenant.id)
     }
     

@@ -15,7 +15,7 @@ import Foundation
 public class PersistentHitQueue: HitQueuing {
     public let processor: HitProcessing
     let dataQueue: DataQueue
-    private let log: TenantLogger
+    private let log: Logger
 
     private var suspended = true
     private var isTaskScheduled = false
@@ -25,7 +25,7 @@ public class PersistentHitQueue: HitQueuing {
     /// - Parameter dataQueue: a `DataQueue` used to persist hits
     /// - Parameter processor: a `HitProcessing` used to process hits
     /// - Parameter logger: logger for tenant instance using this `PersistentHitQueue`
-    public init(dataQueue: DataQueue, processor: HitProcessing, logger: TenantLogger) {
+    public init(dataQueue: DataQueue, processor: HitProcessing, logger: Logger) {
         self.dataQueue = dataQueue
         self.processor = processor
         self.log = logger

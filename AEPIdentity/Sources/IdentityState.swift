@@ -16,7 +16,7 @@ import Foundation
 /// Manages the business logic of the Identity extension
 class IdentityState {
     private let LOG_TAG = "IdentityState"
-    private let log: TenantLogger
+    private let log: Logger
     private var pushIdManager: PushIDManageable
     private(set) var hitQueue: HitQueuing
     #if DEBUG
@@ -36,7 +36,7 @@ class IdentityState {
     /// Creates a new `IdentityState` with the given identity properties
     /// - Parameter identityProperties: identity properties
     /// - Parameter pushIdManager: a push id manager
-    init(logger: TenantLogger, identityProperties: IdentityProperties, hitQueue: HitQueuing, pushIdManager: PushIDManageable) {
+    init(logger: Logger, identityProperties: IdentityProperties, hitQueue: HitQueuing, pushIdManager: PushIDManageable) {
         self.log = logger
         self.identityProperties = identityProperties
         self.hitQueue = hitQueue

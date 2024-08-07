@@ -16,7 +16,7 @@ import Foundation
 /// Handles loading and saving the launch appId to the data store and manifest
 struct LaunchIDManager {
     let dataStore: NamedCollectionDataStore
-    let log: TenantLogger
+    let log: Logger
     private let logTag = "LaunchIDManager"
 
     /// Loads the appId from the data store, if not present in the data store loads from the manifest

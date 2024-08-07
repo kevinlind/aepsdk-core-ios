@@ -20,7 +20,7 @@ protocol PushIDManageable {
     ///   - logger: logger for tenant using this `PushIDManageable`
     ///   - dataStore: the datastore to store push data in
     ///   - eventDispatcher: a function which can dispatch an `Event` to the `EventHub`
-    init(logger: TenantLogger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void)
+    init(logger: Logger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void)
 
     /// Updates the push identifier
     /// - Parameter pushId: the new push identifier

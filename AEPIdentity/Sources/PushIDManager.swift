@@ -16,7 +16,7 @@ import Foundation
 /// A type which manages dispatching events based on Push ID changes
 struct PushIDManager: PushIDManageable {
     private let LOG_TAG = "PushIDManager"
-    private let log: TenantLogger
+    private let log: Logger
 
     private var pushEnabled: Bool {
         get {
@@ -43,7 +43,7 @@ struct PushIDManager: PushIDManageable {
 
     // MARK: PushIDManageable
 
-    init(logger: TenantLogger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void) {
+    init(logger: Logger, dataStore: NamedCollectionDataStore, eventDispatcher: @escaping (Event) -> Void) {
         self.log = logger
         self.dataStore = dataStore
         self.eventDispatcher = eventDispatcher

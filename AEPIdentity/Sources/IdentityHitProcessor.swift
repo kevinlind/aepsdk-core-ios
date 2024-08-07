@@ -14,7 +14,7 @@ import Foundation
 
 class IdentityHitProcessor: HitProcessing {
     private let LOG_TAG = "IdentityHitProcessor"
-    private let log: TenantLogger
+    private let log: Logger
 
     private let responseHandler: (IdentityHit, Data?) -> Void
     private var networkService: Networking {
@@ -23,7 +23,7 @@ class IdentityHitProcessor: HitProcessing {
 
     /// Creates a new `IdentityHitProcessor` where the `responseHandler` will be invoked after each successful processing of a hit
     /// - Parameter responseHandler: a function to be invoked with the `DataEntity` for a hit and the response data for that hit
-    init(logger: TenantLogger, responseHandler: @escaping (IdentityHit, Data?) -> Void) {
+    init(logger: Logger, responseHandler: @escaping (IdentityHit, Data?) -> Void) {
         self.responseHandler = responseHandler
         self.log = logger
     }

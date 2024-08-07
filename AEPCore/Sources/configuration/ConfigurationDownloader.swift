@@ -17,7 +17,7 @@ import Foundation
 struct ConfigurationDownloader: ConfigurationDownloadable {
 
     private let logTag = "ConfigurationDownloader"
-    let log: TenantLogger
+    let log: Logger
 
     /// Retrieves a configuration Dictionary from the provided `filePath`
     /// If the provided `filePath` is invalid or if does not contain valid JSON, `nil` is returned.

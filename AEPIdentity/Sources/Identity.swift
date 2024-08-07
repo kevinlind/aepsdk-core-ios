@@ -22,13 +22,13 @@ import Foundation
     public let metadata: [String: String]? = nil
     private(set) var state: IdentityState?
     
-    private let log: TenantLogger
+    private let log: Logger
 
     // MARK: Extension
 
     public required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
-        self.log = TenantLogger(tenantId: runtime.getTenantId()) // Example of using ExtensionLog by passing ID directly and not from Service Provider
+        self.log = TenantLogger(tenantId: runtime.getTenantId()) // Example of using Logger by passing ID directly and not from Service Provider
         super.init()
 
         guard let dataQueue = runtime.getServiceProvider().getDataQueue(label: name) else {

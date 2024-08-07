@@ -28,7 +28,7 @@ class Configuration: NSObject, Extension {
     private let retryQueue = DispatchQueue(label: "com.adobe.configuration.retry")
     private let rulesEngineName = "\(ConfigurationConstants.EXTENSION_NAME).rulesengine"
     private var retryConfigurationCounter: Double = 1
-    private let log: TenantLogger // ExtensionLog instance for convienence
+    private let log: Logger
 
     // MARK: - Extension
 

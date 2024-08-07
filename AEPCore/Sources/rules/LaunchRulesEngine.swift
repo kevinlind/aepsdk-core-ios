@@ -38,7 +38,7 @@ public class LaunchRulesEngine {
     private let rulesQueue: DispatchQueue
     private var waitingEvents: [Event]?
     private var dispatchChainedEventsCount: [UUID: Int] = [:]
-    private let log: TenantLogger
+    private let log: Logger
 
     let extensionRuntime: ExtensionRuntime
     let evaluator: ConditionEvaluator

@@ -469,6 +469,7 @@
 		BFF317412C546FFD00777817 /* TenantLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317402C546FFD00777817 /* TenantLogger.swift */; };
 		BFF317452C5C7DA900777817 /* Tenant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317442C5C7DA900777817 /* Tenant.swift */; };
 		BFF317462C5C7FA300777817 /* ExtensionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */; };
+		BFF317492C64298500777817 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317482C64298500777817 /* Logger.swift */; };
 		C0FC8CAF8ADDBE9FBAE4C374 /* Pods_AEPLifecycleTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D83561969E15C045AEBC014 /* Pods_AEPLifecycleTests.framework */; };
 		D42C989C26CAE6DA002E3184 /* LifecycleV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */; };
 		D42C989E26CAE790002E3184 /* LifecycleV2Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */; };
@@ -1194,6 +1195,7 @@
 		BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionServiceProvider.swift; sourceTree = "<group>"; };
 		BFF317402C546FFD00777817 /* TenantLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenantLogger.swift; sourceTree = "<group>"; };
 		BFF317442C5C7DA900777817 /* Tenant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tenant.swift; sourceTree = "<group>"; };
+		BFF317482C64298500777817 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		CBB1F735C1AAEA1CD448B2C0 /* Pods-AEPLifecycleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AEPLifecycleTests.debug.xcconfig"; path = "Target Support Files/Pods-AEPLifecycleTests/Pods-AEPLifecycleTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2.swift; sourceTree = "<group>"; };
 		D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2Constants.swift; sourceTree = "<group>"; };
@@ -1705,6 +1707,7 @@
 				3F0397A724BE5FF30019F095 /* Logging.swift */,
 				3F0397AD24BE5FF30019F095 /* LoggingService.swift */,
 				BFF317402C546FFD00777817 /* TenantLogger.swift */,
+				BFF317482C64298500777817 /* Logger.swift */,
 			);
 			path = log;
 			sourceTree = "<group>";
@@ -3433,6 +3436,7 @@
 				3F0397CA24BE5FF30019F095 /* Log.swift in Sources */,
 				92EEA6062589343700DBA3EE /* MessageMonitor.swift in Sources */,
 				3F0397DC24BE5FF30019F095 /* UserDefaultsNamedCollection.swift in Sources */,
+				BFF317492C64298500777817 /* Logger.swift in Sources */,
 				92F06D0425BA33F4004C1700 /* Showable.swift in Sources */,
 				3F0397D524BE5FF30019F095 /* DataQueue.swift in Sources */,
 				BB00E26D24D9BF6C00C578C1 /* URLUtility.swift in Sources */,

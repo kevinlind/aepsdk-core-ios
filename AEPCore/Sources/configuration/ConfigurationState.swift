@@ -29,7 +29,7 @@ class ConfigurationState {
     private var unmergedConfiguration = [String: Any]()
     private var currentConfiguration = [String: Any]()
     
-    private let log: TenantLogger
+    private let log: Logger
 
     /// The persisted programmatic config or an empty config dictionary if none is found
     private var programmaticConfigInDataStore: [String: AnyCodable] {
