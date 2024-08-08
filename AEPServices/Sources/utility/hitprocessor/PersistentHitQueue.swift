@@ -35,7 +35,7 @@ public class PersistentHitQueue: HitQueuing {
     /// - Parameter dataQueue: a `DataQueue` used to persist hits
     /// - Parameter processor: a `HitProcessing` used to process hits
     public convenience init(dataQueue: DataQueue, processor: HitProcessing) {
-        self.init(dataQueue: dataQueue, processor: processor, logger: TenantLogger())
+        self.init(dataQueue: dataQueue, processor: processor, logger: LoggerImpl())
     }
 
     @discardableResult

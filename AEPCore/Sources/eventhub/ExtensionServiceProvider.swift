@@ -38,7 +38,7 @@ public class ExtensionServiceProvider: NSObject {
     }
     
     public func getLog() -> Logger {
-        return TenantLogger(tenantId: tenant.id)
+        return TenantLogger(tenant: tenant)
     }
     
     // TODO - create wrapper for Networking service to pass in tenant ID

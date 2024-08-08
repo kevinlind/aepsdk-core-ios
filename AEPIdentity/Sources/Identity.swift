@@ -28,7 +28,7 @@ import Foundation
 
     public required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
-        self.log = TenantLogger(tenantId: runtime.getTenantId()) // Example of using Logger by passing ID directly and not from Service Provider
+        self.log = runtime.getServiceProvider().getLog()
         super.init()
 
         guard let dataQueue = runtime.getServiceProvider().getDataQueue(label: name) else {

@@ -466,10 +466,11 @@
 		BF4A709E26CCCF5500612434 /* RulesEngineIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4A709D26CCCF5400612434 /* RulesEngineIntegrationTests.swift */; };
 		BF4A70AE26CCD27900612434 /* rules_dispatch_consequence.json in Resources */ = {isa = PBXBuildFile; fileRef = BF4A70AD26CCD27900612434 /* rules_dispatch_consequence.json */; };
 		BF4A70BE26CCD30800612434 /* rules_dispatch_consequence.zip in Resources */ = {isa = PBXBuildFile; fileRef = BF4A70BD26CCD30800612434 /* rules_dispatch_consequence.zip */; };
-		BFF317412C546FFD00777817 /* TenantLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317402C546FFD00777817 /* TenantLogger.swift */; };
 		BFF317452C5C7DA900777817 /* Tenant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317442C5C7DA900777817 /* Tenant.swift */; };
 		BFF317462C5C7FA300777817 /* ExtensionServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */; };
 		BFF317492C64298500777817 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317482C64298500777817 /* Logger.swift */; };
+		BFF3174A2C642C2A00777817 /* TenantLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF317402C546FFD00777817 /* TenantLogger.swift */; };
+		BFF3174C2C642C8300777817 /* LoggerImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF3174B2C642C8300777817 /* LoggerImpl.swift */; };
 		C0FC8CAF8ADDBE9FBAE4C374 /* Pods_AEPLifecycleTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D83561969E15C045AEBC014 /* Pods_AEPLifecycleTests.framework */; };
 		D42C989C26CAE6DA002E3184 /* LifecycleV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */; };
 		D42C989E26CAE790002E3184 /* LifecycleV2Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */; };
@@ -1196,6 +1197,7 @@
 		BFF317402C546FFD00777817 /* TenantLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenantLogger.swift; sourceTree = "<group>"; };
 		BFF317442C5C7DA900777817 /* Tenant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tenant.swift; sourceTree = "<group>"; };
 		BFF317482C64298500777817 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		BFF3174B2C642C8300777817 /* LoggerImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggerImpl.swift; sourceTree = "<group>"; };
 		CBB1F735C1AAEA1CD448B2C0 /* Pods-AEPLifecycleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AEPLifecycleTests.debug.xcconfig"; path = "Target Support Files/Pods-AEPLifecycleTests/Pods-AEPLifecycleTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D42C989B26CAE6DA002E3184 /* LifecycleV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2.swift; sourceTree = "<group>"; };
 		D42C989D26CAE790002E3184 /* LifecycleV2Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleV2Constants.swift; sourceTree = "<group>"; };
@@ -1706,8 +1708,8 @@
 				3F0397A924BE5FF30019F095 /* LogLevel.swift */,
 				3F0397A724BE5FF30019F095 /* Logging.swift */,
 				3F0397AD24BE5FF30019F095 /* LoggingService.swift */,
-				BFF317402C546FFD00777817 /* TenantLogger.swift */,
 				BFF317482C64298500777817 /* Logger.swift */,
+				BFF3174B2C642C8300777817 /* LoggerImpl.swift */,
 			);
 			path = log;
 			sourceTree = "<group>";
@@ -2036,6 +2038,7 @@
 				21A6737225434AE600A7E906 /* SharedStateType.swift */,
 				BFF3173C2C459FDA00777817 /* ExtensionServiceProvider.swift */,
 				BFF317442C5C7DA900777817 /* Tenant.swift */,
+				BFF317402C546FFD00777817 /* TenantLogger.swift */,
 			);
 			path = eventhub;
 			sourceTree = "<group>";
@@ -3256,6 +3259,7 @@
 				3FB66AD524CA004400502CAF /* EventHubError.swift in Sources */,
 				24EDE33B26F39F450068A65F /* EventHistoryResult.swift in Sources */,
 				3FB66AD324CA004400502CAF /* ExtensionRuntime.swift in Sources */,
+				BFF3174A2C642C2A00777817 /* TenantLogger.swift in Sources */,
 				7522618B2AA929E300D59847 /* UserDefaultsMigrator.swift in Sources */,
 				3F2B1DA62631E7FE0030F50B /* RuleConsequence.swift in Sources */,
 				24EDE33326EFB7470068A65F /* EventHistoryRequest.swift in Sources */,
@@ -3416,8 +3420,8 @@
 				24C5E15D26B990CB005BEA72 /* MessageGesture.swift in Sources */,
 				24C5E14D26B8B00B005BEA72 /* MessageSettings.swift in Sources */,
 				2EF54C262BF6C69800685C07 /* URLError+Recoverable.swift in Sources */,
-				BFF317412C546FFD00777817 /* TenantLogger.swift in Sources */,
 				3F0397DB24BE5FF30019F095 /* NamedCollectionDataStore.swift in Sources */,
+				BFF3174C2C642C8300777817 /* LoggerImpl.swift in Sources */,
 				3F0397C524BE5FF30019F095 /* CacheEntry.swift in Sources */,
 				3F0397F524BE60910019F095 /* AtomicCounter.swift in Sources */,
 				92F06BFC25B8F1FE004C1700 /* MessageMonitoring.swift in Sources */,
