@@ -55,7 +55,7 @@ class ConfigurationState {
         self.dataStore = dataStore
         self.configDownloader = configDownloader
         self.appIdManager = appIdManager
-        self.log = extensionRuntime.getServiceProvider().getLog()
+        self.log = extensionRuntime.getServiceProvider().getLogger()
     }
 
     /// Computes and returns environment aware configuration based on `self.currentConfiguration`

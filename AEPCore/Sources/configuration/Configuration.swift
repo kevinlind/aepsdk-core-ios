@@ -35,7 +35,7 @@ class Configuration: NSObject, Extension {
     /// Initializes the Configuration extension and it's dependencies
     required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
-        self.log = runtime.getServiceProvider().getLog()
+        self.log = runtime.getServiceProvider().getLogger()
         rulesEngine = LaunchRulesEngine(name: rulesEngineName, extensionRuntime: runtime)
 
         dataStore = runtime.getServiceProvider().getNamedCollectionDataStore(name: ConfigurationConstants.DATA_STORE_NAME)

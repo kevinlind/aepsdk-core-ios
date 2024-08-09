@@ -20,35 +20,67 @@ public class ExtensionServiceProvider: NSObject {
     
     private let tenant: Tenant
     
+    private let logger: Logger
+    
     // TODO - store service instances in variable so they are created once.
+    
     init(tenant: Tenant) {
         self.tenant = tenant
+        logger = TenantLogger(tenant: tenant)
     }
     
+    /// Returns an instance of `NamedCollectionDataStore` with the given `name` appended with this tenant instance's name.
+    /// - Parameter name: the name of this data store
+    /// - Returns: an instance of type `NamedCollectionDataStore` with the given data store `name` appended with this tenant's name.
     public func getNamedCollectionDataStore(name: String) -> NamedCollectionDataStore {
         return NamedCollectionDataStore(name: name.tenantAwareName(for: tenant))
     }
     
+    /// Returns an instance of `DataQueue` with the given `label` appended with this tenant instance's name.
+    /// The `DataQueue` instance is provided by the shared `ServiceProvider`.
+    /// - Parameter label: the  label assigned to the `DataQueue` when created
+    /// - Returns: an instance of type `DataQueue` with the given `label` appended with this tenant's name
     public func getDataQueue(label: String) -> DataQueue? {
         return ServiceProvider.shared.dataQueueService.getDataQueue(label: label.tenantAwareName(for: tenant))
     }
     
+    /// Returns an instance of `Cache` with the given cache `name` appended with this tenant instance's name.
+    /// - Parameter name: the name of the cache
+    /// - Returns: an instance of `Cache` with the given `name` appended with this tenant's name.
     public func getCache(name: String) -> Cache {
         return Cache(name: name.tenantAwareName(for: tenant))
     }
     
-    public func getLog() -> Logger {
-        return TenantLogger(tenant: tenant)
+    /// Returns an instance of type `Logger` specific to a tenant.
+    /// - Returns: a tenant-aware instance of type `Logger`
+    public func getLogger() -> Logger {
+        return logger
     }
     
-    // TODO - create wrapper for Networking service to pass in tenant ID
+    /// Returns a shared instance of tye `Networking` provided by the shared `ServiceProvider`.
+    /// The network service is not specific to any tenant.
+    /// - Returns: a shared instance of type `Networking`
     public func getNetworkService() -> Networking {
         return ServiceProvider.shared.networkService
     }
     
-    // TODO - create wrapper/overload init to pass in tenant ID
+    /// Returns a shared instance of type `SystemInfoService` provided by the shared `ServiceProvider`.
+    /// The system info service provides system level utilities which are not specific to any tenant.
+    /// - Returns: a shared instance of type `SystemInfoService`
     public func getSystemInfoService() -> SystemInfoService {
         return ServiceProvider.shared.systemInfoService
     }
     
+}
+
+@available(iOSApplicationExtension, unavailable)
+@available(tvOSApplicationExtension, unavailable)
+extension ExtensionServiceProvider {
+    
+    /// Returns a shared instance of type `URLOpening` provided by the shared `ServiceProvider`.
+    /// The URL service is not specific to any tenant.
+    /// - Returns: a shared instance of type `URLOpening`
+    public func getUrlService() -> URLOpening {
+        return ServiceProvider.shared.urlService
+    }
 }

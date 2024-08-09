@@ -28,7 +28,7 @@ import Foundation
 
     public required init(runtime: ExtensionRuntime) {
         self.runtime = runtime
-        self.log = runtime.getServiceProvider().getLog()
+        self.log = runtime.getServiceProvider().getLogger()
         super.init()
 
         guard let dataQueue = runtime.getServiceProvider().getDataQueue(label: name) else {

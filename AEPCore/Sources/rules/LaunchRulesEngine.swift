@@ -60,7 +60,7 @@ public class LaunchRulesEngine {
 //            RulesEngineLog.logging = RulesEngineNativeLogging()
 //        }
         self.extensionRuntime = extensionRuntime
-        self.log = extensionRuntime.getServiceProvider().getLog()
+        self.log = extensionRuntime.getServiceProvider().getLogger()
     }
 
     /// Register a `RulesTracer`
