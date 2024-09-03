@@ -14,7 +14,7 @@
 import Foundation
 import AEPServices
 
-/// provides all the methods needed by an `Extension`
+/// provides all the services needed by an `Extension`
 @objc(AEPExtensionServiceProvider)
 public class ExtensionServiceProvider: NSObject {
     
@@ -83,4 +83,13 @@ extension ExtensionServiceProvider {
     public func getUrlService() -> URLOpening {
         return ServiceProvider.shared.urlService
     }
+    
+    #if os(iOS)
+    /// Returns a shared instance of type `UIService` provided by the shared `ServiceProvider`.
+    /// The UI service is not specific to any tenant.
+    /// - Returns: a shared instance of type `UIService`
+    public func getUIService() -> UIService {
+        return ServiceProvider.shared.uiService
+    }
+    #endif
 }
