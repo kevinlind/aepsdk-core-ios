@@ -123,4 +123,12 @@ public protocol ExtensionRuntime {
     ///                   from date
     ///   - handler: contains an `EventHistoryResult` for each provided request
     func getHistoricalEvents(_ requests: [EventHistoryRequest], enforceOrder: Bool, handler: @escaping ([EventHistoryResult]) -> Void)
+    
+    /// Retrieves Service Provider instance for this container.
+    /// - Returns: An `ExtensionServiceProvider` for this container.
+    func getServiceProvider() -> ExtensionServiceProvider
+    
+    /// Get tenant id for this container
+    /// - Returns: The tenant identifier for this container, or nil if the SDK is not running in containerization mode
+    func getTenantId() -> String?
 }
