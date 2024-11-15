@@ -39,4 +39,57 @@ public struct ClassFinder {
         }
         return classes
     }
+
+    public static func classesFromBundleAEPKey() -> [AnyClass] {
+        var classes: [AnyClass] = []
+        for bundle in Bundle.allFrameworks {
+            guard let bundleIdentifier = bundle.bundleIdentifier, bundleIdentifier.hasPrefix("com.adobe.aep.") else {
+                continue
+            }
+
+            //Log.trace(label: "ClassFinder", "Found bundle for \(bundleIdentifier)")
+
+            guard let plist = bundle.infoDictionary, 
+                    let extensionClass = plist["AEPExtensionClass"] as? String
+            else {
+                continue
+            }
+
+            if let cls: AnyClass = NSClassFromString("\(extensionClass)") {
+                classes.append(cls)
+            }
+
+        }
+
+        return classes
+    }
+
+    public static func classesFromBundleWithExistingKeys() -> [AnyClass] {
+        var classes: [AnyClass] = []
+        for bundle in Bundle.allFrameworks {
+            guard let bundleIdentifier = bundle.bundleIdentifier, bundleIdentifier.hasPrefix("com.adobe.aep.") else {
+                continue
+            }
+
+            //Log.trace(label: "ClassFinder", "Found bundle for \(bundleIdentifier)")
+
+            guard let plist = bundle.infoDictionary,
+                  let bundleExecutable = plist["CFBundleExecutable"] as? String,
+                  let bundleName = plist["CFBundleName"] as? String
+            else {
+                //Log.trace(label: "ClassFinder", "Failed to get Plist, executable, or name for \(bundleIdentifier)")
+                continue
+            }
+
+            let namespace = bundleExecutable.replacingOccurrences(of: " ", with: "_")
+            let className = bundleName.dropFirst(3)
+
+            if let cls: AnyClass = NSClassFromString("\(namespace).\(className)") {
+                classes.append(cls)
+            }
+
+        }
+
+        return classes
+    }
 }
