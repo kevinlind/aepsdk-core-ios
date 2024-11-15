@@ -59,9 +59,28 @@ public final class MobileCore: NSObject {
 
         // Register Extensions, call configureWithAppId from callback
         DispatchQueue.global().async {
+            let startTime = Date()
             let classList = ClassFinder.classes(conformToProtocol: Extension.self)
             let filteredClassList = classList.filter { $0 !== AEPCore.EventHubPlaceholderExtension.self && $0 !== AEPCore.Configuration.self }.compactMap { $0 as? NSObject.Type }
-            registerExtensions(filteredClassList) {
+            let endTime = Date()
+            let diffTime = endTime.timeIntervalSince(startTime)
+            Log.error(label: "BLAH", "BLAH time for search of classes: \(diffTime*1000) ms")
+
+            let startTime2 = Date()
+            let newClassList = ClassFinder.classesFromBundleAEPKey()
+            let newFilteredClassList = newClassList.compactMap { $0 as? NSObject.Type }
+            let endTime2 = Date()
+            let diffTime2 = endTime2.timeIntervalSince(startTime2)
+            Log.error(label: "BLAH", "BLAH time for seach of Bundle with extension name plist: \(diffTime2*1000) ms")
+
+            let startTime3 = Date()
+            let bundledClassList = ClassFinder.classesFromBundleWithExistingKeys()
+            let bundledFilteredClassList = bundledClassList.compactMap { $0 as? NSObject.Type }
+            let endTime3 = Date()
+            let diffTime3 = endTime3.timeIntervalSince(startTime3)
+            Log.error(label: "BLAH", "BLAH time for seach of Bundle without name plist: \(diffTime3*1000) ms")
+
+            registerExtensions(bundledFilteredClassList) {
                 configureWith(appId: appId)
 
                 // If disableAutomaticLifecycleTracking flag is false, set lifecycle notification listeners
