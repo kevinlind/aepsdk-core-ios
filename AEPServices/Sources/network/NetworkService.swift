@@ -24,13 +24,13 @@ class NetworkService: Networking {
     private var sessions: [String: URLSession] = [:]
 
     public func connectAsync(networkRequest: NetworkRequest, completionHandler: ((HttpConnection) -> Void)? = nil) {
-        if !networkRequest.url.absoluteString.starts(with: "https") {
-            Log.warning(label: LOG_PREFIX, "Network request for (\(networkRequest.url.absoluteString)) could not be created, only https requests are accepted.")
-            if let closure = completionHandler {
-                closure(HttpConnection(data: nil, response: nil, error: NetworkServiceError.invalidUrl))
-            }
-            return
-        }
+//        if !networkRequest.url.absoluteString.starts(with: "https") {
+//            Log.warning(label: LOG_PREFIX, "Network request for (\(networkRequest.url.absoluteString)) could not be created, only https requests are accepted.")
+//            if let closure = completionHandler {
+//                closure(HttpConnection(data: nil, response: nil, error: NetworkServiceError.invalidUrl))
+//            }
+//            return
+//        }
 
         let urlRequest = createURLRequest(networkRequest: networkRequest)
         let urlSession = createURLSession(networkRequest: networkRequest)
