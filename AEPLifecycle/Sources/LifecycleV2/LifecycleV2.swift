@@ -65,7 +65,13 @@ class LifecycleV2 {
                 // if no close timestamp was persisted, backdate this event to start timestamp - 1 second
                 let computedAppCloseDate = Date(timeIntervalSince1970: (date.timeIntervalSince1970 - 1))
 
-                if let crashXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(launchDate: previousAppStartDate, closeDate: previousAppCloseDate, fallbackCloseDate: computedAppCloseDate, isCloseUnknown: true) {
+                var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
+
+                // TODO incorporate persisted SessionContext with DataStoreCache
+                previousSessionContext.startDate = previousAppStartDate
+                previousSessionContext.closeDate = previousAppCloseDate
+
+                if let crashXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: computedAppCloseDate, isCloseUnknown: true) {
                     // dispatch application close event with xdm data
                     self.dispatchApplicationClose(xdm: crashXDM, parentEvent: parentEvent)
                 }
@@ -78,7 +84,8 @@ class LifecycleV2 {
                 self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent)
             }
 
-            self.persistAppVersion()
+            //self.persistAppVersion()
+            self.persistSessionContext()
         }
     }
 
@@ -95,7 +102,11 @@ class LifecycleV2 {
             // get start date from cache/presistence
             let startDate = self.dataStoreCache.getAppStartDate()
 
-            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(launchDate: startDate, closeDate: pauseDate, fallbackCloseDate: pauseDate, isCloseUnknown: false) {
+            var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
+            previousSessionContext.closeDate = pauseDate
+            previousSessionContext.startDate = startDate
+
+            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: pauseDate, isCloseUnknown: false) {
                 // dispatch application close event with xdm data
                 self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
             }
@@ -117,9 +128,11 @@ class LifecycleV2 {
             let calculatedCloseDate = Date(timeIntervalSince1970: (date.timeIntervalSince1970 - 1 ))
             let fallbackDate = (isCloseUnknown ? self.dataStoreCache.getCloseDate() : pauseDate) ?? calculatedCloseDate
 
-            // TODO pass in previous application and os info
+            var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
+            previousSessionContext.startDate = startDate
+            previousSessionContext.closeDate = pauseDate
 
-            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(launchDate: startDate, closeDate: pauseDate, fallbackCloseDate: fallbackDate, isCloseUnknown: isCloseUnknown) {
+            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: fallbackDate, isCloseUnknown: isCloseUnknown) {
                 // dispatch application close event with xdm data
                 self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
             }
@@ -132,7 +145,7 @@ class LifecycleV2 {
         }
 
         // Save app version for isUpgrade checks
-        self.persistAppVersion()
+        self.persistSessionContext()
     }
 
     /// Identifies if the previous session ended due to an incorrect implementation or possible app crash.
@@ -179,7 +192,8 @@ class LifecycleV2 {
 
     /// - Returns: Bool indicating whether the app has been upgraded
     private func isUpgrade() -> Bool {
-        if let previousAppVersion = dataStore.getString(key: LifecycleV2Constants.DataStoreKeys.LAST_APP_VERSION) {
+        if let previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT),
+            let previousAppVersion = previousSessionContext.applicationVersion {
             let currentAppVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
             return previousAppVersion != currentAppVersion
         }
@@ -189,8 +203,19 @@ class LifecycleV2 {
 
     /// Persist the application version into dataStore
     private func persistAppVersion() {
+        // TODO remove func
         let currentAppVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
         dataStore.set(key: LifecycleV2Constants.DataStoreKeys.LAST_APP_VERSION, value: currentAppVersion)
+    }
+
+    private func persistSessionContext() {
+        var sessionContext = LifecycleV2SessionContext()
+        sessionContext.applicationName = systemInfoService.getApplicationName()
+        sessionContext.applicationVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
+        sessionContext.operatingSystem = systemInfoService.getOperatingSystemName()
+        sessionContext.operatingSystemVersion = systemInfoService.getOperatingSystemVersion()
+
+        dataStore.setObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT, value: sessionContext)
     }
 
     /// Returns the application version in the format appVersion (versionCode). Example: 2.3 (10)
@@ -200,4 +225,27 @@ class LifecycleV2 {
         let appVersionNumber = systemInfoService.getApplicationVersionNumber() ?? ""
         return "\(appVersionNumber) (\(appBuildNumber))".replacingOccurrences(of: "  ", with: " ").replacingOccurrences(of: "()", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
+
+/// A container struct to easily serialize lifecycle session context information
+struct LifecycleV2SessionContext: Codable {
+    /// Last known application name.
+    var applicationName: String?
+
+    /// Last known application version.
+    var applicationVersion: String?
+
+    /// Last known operating system name.
+    var operatingSystem: String?
+
+    /// Last known operating system version.
+    var operatingSystemVersion: String?
+
+    /// Start date of last known session.
+    var startDate: Date?
+
+    /// Close date of last known session.
+    var closeDate: Date?
+
+    init() {}
 }

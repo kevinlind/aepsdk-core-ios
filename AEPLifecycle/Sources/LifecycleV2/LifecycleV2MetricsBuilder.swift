@@ -48,12 +48,21 @@ class LifecycleV2MetricsBuilder {
     ///    - fallbackCloseDate: the date to be used as xdm.timestamp for the Close event when `closeDate` is nil
     ///    - isCloseUnknown: indicates if this is a regular or abnormal close event
     /// - Returns: App close event data in dictionary format
-    func buildAppCloseXDMData(launchDate: Date?, closeDate: Date?, fallbackCloseDate: Date, isCloseUnknown: Bool) -> [String: Any]? {
+    func buildAppCloseXDMData(previousSessionContext: LifecycleV2SessionContext, fallbackCloseDate: Date, isCloseUnknown: Bool) -> [String: Any]? {
         var appCloseXDMData = XDMMobileLifecycleDetails()
 
-        appCloseXDMData.application = computeAppCloseData(launchDate: launchDate, closeDate: closeDate, isCloseUnknown: isCloseUnknown)
+        appCloseXDMData.application = computeAppCloseData(launchDate: previousSessionContext.startDate,
+                                                          closeDate: previousSessionContext.closeDate,
+                                                          isCloseUnknown: isCloseUnknown)
+        appCloseXDMData.application?.name = previousSessionContext.applicationName
+        appCloseXDMData.application?.version = previousSessionContext.applicationVersion
+
+        appCloseXDMData.environment = XDMEnvironment()
+        appCloseXDMData.environment?.operatingSystem = previousSessionContext.operatingSystem
+        appCloseXDMData.environment?.operatingSystemVersion = previousSessionContext.operatingSystemVersion
+
         appCloseXDMData.eventType = LifecycleV2Constants.XDMEventType.APP_CLOSE
-        appCloseXDMData.timestamp = closeDate ?? fallbackCloseDate
+        appCloseXDMData.timestamp = previousSessionContext.closeDate ?? fallbackCloseDate
 
         return appCloseXDMData.asDictionary()
     }

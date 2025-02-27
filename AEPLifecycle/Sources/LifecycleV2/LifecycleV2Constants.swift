@@ -36,6 +36,7 @@ enum LifecycleV2Constants {
     /// The values in this section need to be prefixed with v2 to avoid any conflicts with the dataStore keys from standard `Lifecycle` extension
     enum DataStoreKeys {
         static let LAST_APP_VERSION = "v2.last.app.version"
+        static let LAST_SESSION_CONTEXT = "v2.last.session.context"
         static let APP_START_DATE = "v2.app.start.date"
         static let APP_PAUSE_DATE = "v2.app.pause.date"
         static let APP_CLOSE_DATE = "v2.app.close.date"
