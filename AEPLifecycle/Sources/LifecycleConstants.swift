@@ -50,6 +50,7 @@ enum LifecycleConstants {
         static let PREVIOUS_SESSION_START_TIMESTAMP = "previoussessionstarttimestampmillis"
         static let PREVIOUS_SESSION_PAUSE_TIMESTAMP = "previoussessionpausetimestampmillis"
         static let CONFIG_SESSION_TIMEOUT = "lifecycle.sessionTimeout"
+        static let CONFIG_USE_SESSION_TIMEOUT = "lifecycleV2.useSessionTimeout"
     }
 
     enum DataStoreKeys {

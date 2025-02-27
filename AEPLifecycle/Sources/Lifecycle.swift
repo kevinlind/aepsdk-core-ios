@@ -80,7 +80,7 @@ public class Lifecycle: NSObject, Extension {
             startApplicationLifecycle(event: event, configurationSharedState: configurationSharedState)
         } else if event.isLifecyclePauseEvent {
             Log.debug(label: LifecycleConstants.LOG_TAG, "Pausing lifecycle.")
-            pauseApplicationLifecycle(event: event)
+            pauseApplicationLifecycle(event: event, configurationSharedState: configurationSharedState)
         }
     }
 
@@ -111,7 +111,17 @@ public class Lifecycle: NSObject, Extension {
             dispatchSessionStart(parentEvent: event, contextData: lifecycleState.getContextData(), previousStartDate: prevSessionInfo.startDate, previousPauseDate: prevSessionInfo.pauseDate)
         }
 
-        lifecycleV2.start(parentEvent: event, isInstall: install)
+        let useSessionTimeout = getUseSessionTimeout(configurationSharedState: configurationSharedState.value)
+
+        if useSessionTimeout {
+            // v2.1 behavior (sessions)
+            if let prevSessionInfo = prevSessionInfo {
+                lifecycleV2.handleSessionStart(parentEvent: event, sessionInfo: prevSessionInfo, isInstall: install)
+            }
+        } else {
+            // v2 behavior
+            lifecycleV2.start(parentEvent: event, isInstall: install)
+        }
 
         if install {
             persistInstallDate(event.timestamp)
@@ -121,9 +131,15 @@ public class Lifecycle: NSObject, Extension {
     /// Pause the lifecycle session for standard and XDM workflows
     /// - Parameters:
     ///   - event: the lifecycle pause event
-    private func pauseApplicationLifecycle(event: Event) {
+    private func pauseApplicationLifecycle(event: Event, configurationSharedState: SharedStateResult) {
         lifecycleState.pause(pauseDate: event.timestamp)
-        lifecycleV2.pause(parentEvent: event)
+
+        let useSessionTimeout = getUseSessionTimeout(configurationSharedState: configurationSharedState.value)
+
+        if !useSessionTimeout {
+            // v2 behavior
+            lifecycleV2.pause(parentEvent: event)
+        }
     }
 
     /// Attempts to read the advertising identifier from Identity shared state
@@ -184,6 +200,10 @@ public class Lifecycle: NSObject, Extension {
         }
 
         return TimeInterval(sessionTimeoutInt)
+    }
+
+    private func getUseSessionTimeout(configurationSharedState: [String: Any]?) -> Bool {
+        return configurationSharedState?[LifecycleConstants.EventDataKeys.CONFIG_USE_SESSION_TIMEOUT] as? Bool ?? false
     }
 
     /// - Returns: true if there is no install date stored in the data store

@@ -100,8 +100,41 @@ class LifecycleV2 {
                 self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
             }
         }
-
     }
+
+    func handleSessionStart(parentEvent: Event, sessionInfo: LifecycleSessionInfo, isInstall: Bool) {
+        let date = parentEvent.timestamp
+
+        // On first launch, don't dispatch close event
+        if !isInstall {
+            let pauseDate = sessionInfo.pauseDate
+            let startDate = sessionInfo.startDate
+            let isCloseUnknown = sessionInfo.isCrash
+
+            // TODO double check this calculation of dates
+            // Fallback date is pauseDate for known close types and last known event for unknown close types.
+            // When pauseDate and last known event date (getCloseDate) are both nil, fallback to current event date - 1 second
+            let calculatedCloseDate = Date(timeIntervalSince1970: (date.timeIntervalSince1970 - 1 ))
+            let fallbackDate = (isCloseUnknown ? self.dataStoreCache.getCloseDate() : pauseDate) ?? calculatedCloseDate
+
+            // TODO pass in previous application and os info
+
+            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(launchDate: startDate, closeDate: pauseDate, fallbackCloseDate: fallbackDate, isCloseUnknown: isCloseUnknown) {
+                // dispatch application close event with xdm data
+                self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
+            }
+        }
+
+        // Send launch event for new session
+        if let launchXDM = self.xdmMetricsBuilder.buildAppLaunchXDMData(launchDate: date, isInstall: isInstall, isUpgrade: self.isUpgrade()) {
+            // dispatch application launch event with xdm data
+            self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent)
+        }
+
+        // Save app version for isUpgrade checks
+        self.persistAppVersion()
+    }
+
     /// Identifies if the previous session ended due to an incorrect implementation or possible app crash.
     ///
     /// - Parameters:
