@@ -113,7 +113,13 @@ class LifecycleV2 {
         }
     }
 
-    func handleSessionStart(parentEvent: Event, sessionInfo: LifecycleSessionInfo, isInstall: Bool) {
+    /// Handle a session start by closing the previous session and starting a new session.
+    /// - Parameters:
+    ///   - parentEvent: The triggering event for lifecycle
+    ///   - sessionInfo: Previous session information used to construct close event
+    ///   - isInstall: Indicates whether this is an application install scenario
+    ///   - sessionEventData:Lifecycle metrics to include in launch event as free-form data.
+    func handleSessionStart(parentEvent: Event, sessionInfo: LifecycleSessionInfo, isInstall: Bool, sessionEventData: [String: Any]?) {
         let date = parentEvent.timestamp
 
         // On first launch, don't dispatch close event
@@ -141,7 +147,7 @@ class LifecycleV2 {
         // Send launch event for new session
         if let launchXDM = self.xdmMetricsBuilder.buildAppLaunchXDMData(launchDate: date, isInstall: isInstall, isUpgrade: self.isUpgrade()) {
             // dispatch application launch event with xdm data
-            self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent)
+            self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent, analyticsContextData: sessionEventData)
         }
 
         // Save app version for isUpgrade checks
@@ -165,12 +171,23 @@ class LifecycleV2 {
     /// - Parameters:
     ///   - xdm: xdm data for the application launch event
     ///   - parentEvent: the triggering lifecycle event
-    private func dispatchApplicationLaunch(xdm: [String: Any], parentEvent: Event) {
+    private func dispatchApplicationLaunch(xdm: [String: Any], parentEvent: Event, analyticsContextData: [String: Any]? = nil) {
         var eventData: [String: Any] = [:]
         eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
 
+        var additionalLifecycleData: [String: Any] = [:]
+        // Add additional free form date. Typically this will be "__adobe.analytics.contextData"
+        if let analyticsContextData = analyticsContextData, !analyticsContextData.isEmpty {
+            additionalLifecycleData.merge(analyticsContextData) { (_, new) in new }
+        }
+
+        // Add additionalContextData passed to lifecycleStart API as free form data
         if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
-            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
+            additionalLifecycleData.merge(freeFormData) { (_, new) in new }
+        }
+
+        if !additionalLifecycleData.isEmpty {
+            eventData[LifecycleV2Constants.EventDataKeys.DATA] = additionalLifecycleData
         }
 
         let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_LAUNCH, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
