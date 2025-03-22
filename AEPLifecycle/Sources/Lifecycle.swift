@@ -124,33 +124,6 @@ public class Lifecycle: NSObject, Extension {
         }
     }
 
-//    private func mapAnalyticsLaunchData(from contextData: [String: Any]?) -> [String: Any]? {
-//        guard let contextData = contextData else {
-//            return nil
-//        }
-//
-//        let mapContextDataToEventData: [String: String] = [
-//            "launches": "a.launches",
-//            "dayofweek": "a.dayofweek",
-//            "hourofday": "a.hourofday",
-//            "installdate": "a.installdate",
-//            "dayssincelastuse": "a.dayssincelastuse",
-//            "dayssincefirstuse": "a.dayssincefirstuse",
-//            "daysesincelastupgrade": "a.dayssincelastupgrade",
-//            "launchessincelastupgrade": "a.launchessincelastupgrade",
-//            "dailyenguserevent": "a.dailyenguserevent",
-//            "monthlyenguserevent": "a.monthlyenguserevent"
-//            ]
-//
-//        var analyticsData: [String: Any] = [:]
-//        contextData.forEach { key, value in
-//            if mapContextDataToEventData.keys.contains(key), let dataKey = mapContextDataToEventData[key] {
-//                analyticsData[dataKey] = value
-//            }
-//        }
-//        return ["__adobe": ["analytics": ["contextData": analyticsData]]]
-//    }
-
     /// Pause the lifecycle session for standard and XDM workflows
     /// - Parameters:
     ///   - event: the lifecycle pause event

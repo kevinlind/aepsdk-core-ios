@@ -168,58 +168,6 @@ class LifecycleV2 {
         return prevAppStartTS <= 0 || prevAppStartTS > prevAppPauseTS
     }
 
-//    private func dispatchSessionStart(xdm: [String: Any], parentEvent: Event) {
-//        var eventData: [String: Any] = [:]
-//        eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
-//
-//        // Add additionalContextData passed to lifecycleStart API as free form data
-//        if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
-//            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
-//        }
-//
-//        let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_START, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
-//        dispatch(applicationLaunchEvent)
-//    }
-//
-//    /// Dispatches a Lifecycle application launch event with appropriate event data
-//    /// - Parameters:
-//    ///   - xdm: xdm data for the application launch event
-//    ///   - parentEvent: the triggering lifecycle event
-//    private func dispatchApplicationLaunch(xdm: [String: Any], parentEvent: Event) {
-//        var eventData: [String: Any] = [:]
-//        eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
-//
-//        // Add additionalContextData passed to lifecycleStart API as free form data
-//        if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
-//            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
-//        }
-//
-//        let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_LAUNCH, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
-//        dispatch(applicationLaunchEvent)
-//    }
-//
-//    /// Dispatches a Lifecycle application close event with appropriate event data
-//    /// - Parameters:
-//    ///   - xdm: xdm data for the application close event
-//    ///   - parentEvent: the triggering lifecycle event
-//    private func dispatchApplicationClose(xdm: [String: Any], parentEvent: Event) {
-//        let eventData: [String: Any] = [
-//            LifecycleV2Constants.EventDataKeys.XDM: xdm
-//        ]
-//
-//        let applicationCloseEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: eventData)
-//        dispatch(applicationCloseEvent)
-//    }
-//
-//    private func dispatchSessionClose(xdm: [String: Any], parentEvent: Event) {
-//        let eventData: [String: Any] = [
-//            LifecycleV2Constants.EventDataKeys.XDM: xdm
-//        ]
-//
-//        let applicationCloseEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: eventData)
-//        dispatch(applicationCloseEvent)
-//    }
-
     private func dispatch(_ eventType: LifecycleV2EventType, xdm: [String: Any], parentEvent: Event) {
         var eventData: [String: Any] = [:]
         eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
