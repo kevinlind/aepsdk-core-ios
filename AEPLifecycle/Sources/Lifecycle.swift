@@ -80,7 +80,7 @@ public class Lifecycle: NSObject, Extension {
             startApplicationLifecycle(event: event, configurationSharedState: configurationSharedState)
         } else if event.isLifecyclePauseEvent {
             Log.debug(label: LifecycleConstants.LOG_TAG, "Pausing lifecycle.")
-            pauseApplicationLifecycle(event: event, configurationSharedState: configurationSharedState)
+            pauseApplicationLifecycle(event: event)
         }
     }
 
@@ -111,17 +111,12 @@ public class Lifecycle: NSObject, Extension {
             dispatchSessionStart(parentEvent: event, contextData: lifecycleState.getContextData(), previousStartDate: prevSessionInfo.startDate, previousPauseDate: prevSessionInfo.pauseDate)
         }
 
-        let useSessionTimeout = getUseSessionTimeout(configurationSharedState: configurationSharedState.value)
+        // v2 behavior
+        lifecycleV2.start(parentEvent: event, isInstall: install)
 
-        if useSessionTimeout {
-            // v2.1 behavior (sessions)
-            if let prevSessionInfo = prevSessionInfo {
-                let analyticsContextData = mapAnalyticsLaunchData(from: lifecycleState.getContextData()?.toEventData())
-                lifecycleV2.handleSessionStart(parentEvent: event, sessionInfo: prevSessionInfo, isInstall: install, sessionEventData: analyticsContextData)
-            }
-        } else {
-            // v2 behavior
-            lifecycleV2.start(parentEvent: event, isInstall: install)
+        // v2.1 behavior (sessions)
+        if let prevSessionInfo = prevSessionInfo {
+            lifecycleV2.handleSessionStart(parentEvent: event, sessionInfo: prevSessionInfo, isInstall: install)
         }
 
         if install {
@@ -129,76 +124,39 @@ public class Lifecycle: NSObject, Extension {
         }
     }
 
-    private func mapAnalyticsLaunchData(from contextData: [String: Any]?) -> [String: Any]? {
-        guard let contextData = contextData else {
-            return nil
-        }
-
-        let mapContextDataToEventData: [String: String] = [
-            "launches": "a.launches",
-            "dayofweek": "a.dayofweek",
-            "hourofday": "a.hourofday",
-            "installdate": "a.installdate",
-            "dayssincelastuse": "a.dayssincelastuse",
-            "dayssincefirstuse": "a.dayssincefirstuse",
-            "daysesincelastupgrade": "a.dayssincelastupgrade",
-            "launchessincelastupgrade": "a.launchessincelastupgrade",
-            "dailyenguserevent": "a.dailyenguserevent",
-            "monthlyenguserevent": "a.monthlyenguserevent"
-            ]
-
-        var analyticsData: [String: Any] = [:]
-        contextData.forEach { key, value in
-            if mapContextDataToEventData.keys.contains(key), let dataKey = mapContextDataToEventData[key] {
-                analyticsData[dataKey] = value
-            }
-        }
-        return ["__adobe": ["analytics": ["contextData": analyticsData]]]
-
-//        if let launches = contextData.lifecycleMetrics.launches {
-//            analyticsLaunchData["a.launches"] = launches
+//    private func mapAnalyticsLaunchData(from contextData: [String: Any]?) -> [String: Any]? {
+//        guard let contextData = contextData else {
+//            return nil
 //        }
-//        if let dayOfTheWeek = contextData.lifecycleMetrics.dayOfTheWeek {
-//            analyticsLaunchData["a.dayofweek"] = dayOfTheWeek
+//
+//        let mapContextDataToEventData: [String: String] = [
+//            "launches": "a.launches",
+//            "dayofweek": "a.dayofweek",
+//            "hourofday": "a.hourofday",
+//            "installdate": "a.installdate",
+//            "dayssincelastuse": "a.dayssincelastuse",
+//            "dayssincefirstuse": "a.dayssincefirstuse",
+//            "daysesincelastupgrade": "a.dayssincelastupgrade",
+//            "launchessincelastupgrade": "a.launchessincelastupgrade",
+//            "dailyenguserevent": "a.dailyenguserevent",
+//            "monthlyenguserevent": "a.monthlyenguserevent"
+//            ]
+//
+//        var analyticsData: [String: Any] = [:]
+//        contextData.forEach { key, value in
+//            if mapContextDataToEventData.keys.contains(key), let dataKey = mapContextDataToEventData[key] {
+//                analyticsData[dataKey] = value
+//            }
 //        }
-//        if let hourOfTheDay = contextData.lifecycleMetrics.hourOfTheDay {
-//            analyticsLaunchData["a.hourofday"] = hourOfTheDay
-//        }
-//        if let installDate = contextData.lifecycleMetrics.installDate {
-//            analyticsLaunchData["a.installdate"] = installDate
-//        }
-//        if let daysSinceLastUse = contextData.lifecycleMetrics.daysSinceLastLaunch {
-//            analyticsLaunchData["a.dayssincelastuse"] = daysSinceLastUse
-//        }
-//        if let daysSinceFirstUse = contextData.lifecycleMetrics.daysSinceFirstLaunch {
-//            analyticsLaunchData["a.dayssincefirstuse"] = daysSinceFirstUse
-//        }
-//        if let daysSinceLastUpgrade = contextData.lifecycleMetrics.daysSinceLastUpgrade {
-//            analyticsLaunchData["a.dayssincelastupgrade"] = daysSinceLastUpgrade
-//        }
-//        if let launchesSinceLastUpgrade = contextData.lifecycleMetrics.launchesSinceUpgrade {
-//            analyticsLaunchData["a.launchessincelastupgrade"] = launchesSinceLastUpgrade
-//        }
-//        if let dailyEngagedEvent = contextData.lifecycleMetrics.dailyEngagedEvent {
-//            analyticsLaunchData["a.dailyengagedevent"] = dailyEngagedEvent
-//        }
-//        if let monthlyEngagedEvent = contextData.lifecycleMetrics.monthlyEngagedEvent {
-//            analyticsLaunchData["a.monthlyengagedevent"] = monthlyEngagedEvent
-//        }
-    }
+//        return ["__adobe": ["analytics": ["contextData": analyticsData]]]
+//    }
 
     /// Pause the lifecycle session for standard and XDM workflows
     /// - Parameters:
     ///   - event: the lifecycle pause event
-    private func pauseApplicationLifecycle(event: Event, configurationSharedState: SharedStateResult) {
+    private func pauseApplicationLifecycle(event: Event) {
         lifecycleState.pause(pauseDate: event.timestamp)
-
-        let useSessionTimeout = getUseSessionTimeout(configurationSharedState: configurationSharedState.value)
-
-        if !useSessionTimeout {
-            // v2 behavior
-            lifecycleV2.pause(parentEvent: event)
-        }
+        lifecycleV2.pause(parentEvent: event)
     }
 
     /// Attempts to read the advertising identifier from Identity shared state
@@ -259,10 +217,6 @@ public class Lifecycle: NSObject, Extension {
         }
 
         return TimeInterval(sessionTimeoutInt)
-    }
-
-    private func getUseSessionTimeout(configurationSharedState: [String: Any]?) -> Bool {
-        return configurationSharedState?[LifecycleConstants.EventDataKeys.CONFIG_USE_SESSION_TIMEOUT] as? Bool ?? false
     }
 
     /// - Returns: true if there is no install date stored in the data store

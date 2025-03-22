@@ -31,38 +31,62 @@ class LifecycleV2MetricsBuilder {
     /// `XDMEnvironment` and `XDMDevice` info.
     /// - Returns: App launch event data in dictionary format
     func buildAppLaunchXDMData(launchDate: Date, isInstall: Bool, isUpgrade: Bool) -> [String: Any]? {
+        return buildStartXDMData(launchDate: launchDate, isInstall: isInstall, isUpgrade: isUpgrade, eventType: LifecycleV2Constants.XDMEventType.APP_LAUNCH)
+    }
+
+    /// Builds the data required for the XDM Session Start  event, including `XDMApplication`
+    /// `XDMEnvironment` and `XDMDevice` info.
+    /// - Returns: Session start event data in dictionary format
+    func buildSessionStartXDMData(launchDate: Date, isInstall: Bool, isUpgrade: Bool) -> [String: Any]? {
+        return buildStartXDMData(launchDate: launchDate, isInstall: isInstall, isUpgrade: isUpgrade, eventType: LifecycleV2Constants.XDMEventType.SESSION_START)
+    }
+
+    private func buildStartXDMData(launchDate: Date, isInstall: Bool, isUpgrade: Bool, eventType: String) -> [String: Any]? {
         var appLaunchXDMData = XDMMobileLifecycleDetails()
         appLaunchXDMData.application = computeAppLaunchData(isInstall: isInstall, isUpgrade: isUpgrade)
         appLaunchXDMData.device = computeDeviceData()
         appLaunchXDMData.environment = computeEnvironmentData()
-        appLaunchXDMData.eventType = LifecycleV2Constants.XDMEventType.APP_LAUNCH
+        appLaunchXDMData.eventType = eventType
         appLaunchXDMData.timestamp = launchDate
 
         return appLaunchXDMData.asDictionary()
     }
 
-    /// Builds the data required for the XDM Application Close event, including `XDMApplication`
+    /// Builds the data required for the XDM Application Close event, including `XDMApplication` and `XDMEnvironment`.
     /// - Parameters:
-    ///    - launchDate: the app launch date
-    ///    - closeDate: the app close date
+    ///    - previousContext: Lifecycle context data of the previous application launch
     ///    - fallbackCloseDate: the date to be used as xdm.timestamp for the Close event when `closeDate` is nil
     ///    - isCloseUnknown: indicates if this is a regular or abnormal close event
     /// - Returns: App close event data in dictionary format
-    func buildAppCloseXDMData(previousSessionContext: LifecycleV2SessionContext, fallbackCloseDate: Date, isCloseUnknown: Bool) -> [String: Any]? {
+    func buildAppCloseXDMData(previousContext: LifecycleV2PersistedContext, fallbackCloseDate: Date, isCloseUnknown: Bool) -> [String: Any]? {
+        buildCloseXDMData(previousContext: previousContext, fallbackCloseDate: fallbackCloseDate, isCloseUnknown: isCloseUnknown, eventType: LifecycleV2Constants.XDMEventType.APP_CLOSE)
+    }
+
+    /// Builds the data required for the XDM Session Close event, including `XDMApplication` and `XDMEnvironment`.
+    /// - Parameters:
+    ///    - previousContext: Lifecycle context data of the previous session start
+    ///    - fallbackCloseDate: the date to be used as xdm.timestamp for the Close event when `closeDate` is nil
+    ///    - isCloseUnknown: indicates if this is a regular or abnormal close event
+    /// - Returns: Session close event data in dictionary format
+    func buildSessionCloseXDMData(previousContext: LifecycleV2PersistedContext, fallbackCloseDate: Date, isCloseUnknown: Bool) -> [String: Any]? {
+        buildCloseXDMData(previousContext: previousContext, fallbackCloseDate: fallbackCloseDate, isCloseUnknown: isCloseUnknown, eventType: LifecycleV2Constants.XDMEventType.SESSION_CLOSE)
+    }
+
+    func buildCloseXDMData(previousContext: LifecycleV2PersistedContext, fallbackCloseDate: Date, isCloseUnknown: Bool, eventType: String) -> [String: Any]? {
         var appCloseXDMData = XDMMobileLifecycleDetails()
 
-        appCloseXDMData.application = computeAppCloseData(launchDate: previousSessionContext.startDate,
-                                                          closeDate: previousSessionContext.closeDate,
+        appCloseXDMData.application = computeAppCloseData(launchDate: previousContext.startDate,
+                                                          closeDate: previousContext.closeDate,
                                                           isCloseUnknown: isCloseUnknown)
-        appCloseXDMData.application?.name = previousSessionContext.applicationName
-        appCloseXDMData.application?.version = previousSessionContext.applicationVersion
+        appCloseXDMData.application?.name = previousContext.applicationName
+        appCloseXDMData.application?.version = previousContext.applicationVersion
 
         appCloseXDMData.environment = XDMEnvironment()
-        appCloseXDMData.environment?.operatingSystem = previousSessionContext.operatingSystem
-        appCloseXDMData.environment?.operatingSystemVersion = previousSessionContext.operatingSystemVersion
+        appCloseXDMData.environment?.operatingSystem = previousContext.operatingSystem
+        appCloseXDMData.environment?.operatingSystemVersion = previousContext.operatingSystemVersion
 
-        appCloseXDMData.eventType = LifecycleV2Constants.XDMEventType.APP_CLOSE
-        appCloseXDMData.timestamp = previousSessionContext.closeDate ?? fallbackCloseDate
+        appCloseXDMData.eventType = eventType
+        appCloseXDMData.timestamp = previousContext.closeDate ?? fallbackCloseDate
 
         return appCloseXDMData.asDictionary()
     }

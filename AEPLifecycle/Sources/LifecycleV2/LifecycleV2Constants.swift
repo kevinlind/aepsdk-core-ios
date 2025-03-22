@@ -21,11 +21,15 @@ enum LifecycleV2Constants {
     enum XDMEventType {
         static let APP_LAUNCH = "application.launch"
         static let APP_CLOSE = "application.close"
+        static let SESSION_START = "application.session.start"
+        static let SESSION_CLOSE = "application.session.close"
     }
 
     enum EventNames {
         static let APPLICATION_LAUNCH = "Application Launch (Foreground)"
         static let APPLICATION_CLOSE = "Application Close (Background)"
+        static let SESSION_START = "Application Session Start"
+        static let SESSION_CLOSE = "Application Session Close"
     }
 
     enum EventDataKeys {
@@ -37,6 +41,7 @@ enum LifecycleV2Constants {
     enum DataStoreKeys {
         static let LAST_APP_VERSION = "v2.last.app.version"
         static let LAST_SESSION_CONTEXT = "v2.last.session.context"
+        static let LAST_LAUNCH_CONTEXT = "v2.last.launch.context"
         static let APP_START_DATE = "v2.app.start.date"
         static let APP_PAUSE_DATE = "v2.app.pause.date"
         static let APP_CLOSE_DATE = "v2.app.close.date"

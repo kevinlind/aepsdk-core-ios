@@ -65,27 +65,28 @@ class LifecycleV2 {
                 // if no close timestamp was persisted, backdate this event to start timestamp - 1 second
                 let computedAppCloseDate = Date(timeIntervalSince1970: (date.timeIntervalSince1970 - 1))
 
-                var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
+                var previousLaunchContext: LifecycleV2PersistedContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_LAUNCH_CONTEXT) ?? LifecycleV2PersistedContext()
 
-                // TODO incorporate persisted SessionContext with DataStoreCache
-                previousSessionContext.startDate = previousAppStartDate
-                previousSessionContext.closeDate = previousAppCloseDate
+                // TODO incorporate persisted Context with DataStoreCache
+                previousLaunchContext.startDate = previousAppStartDate
+                previousLaunchContext.closeDate = previousAppCloseDate
 
-                if let crashXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: computedAppCloseDate, isCloseUnknown: true) {
+                if let crashXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousContext: previousLaunchContext, fallbackCloseDate: computedAppCloseDate, isCloseUnknown: true) {
                     // dispatch application close event with xdm data
-                    self.dispatchApplicationClose(xdm: crashXDM, parentEvent: parentEvent)
+                    self.dispatch(.applicationClose, xdm: crashXDM, parentEvent: parentEvent)
                 }
             }
 
             self.dataStoreCache.setAppStartDate(date)
 
-            if let launchXDM = self.xdmMetricsBuilder.buildAppLaunchXDMData(launchDate: date, isInstall: isInstall, isUpgrade: self.isUpgrade()) {
+            let isUpgrade = self.isUpgrade(previousContext: dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_LAUNCH_CONTEXT))
+            if let launchXDM = self.xdmMetricsBuilder.buildAppLaunchXDMData(launchDate: date, isInstall: isInstall, isUpgrade: isUpgrade) {
                 // dispatch application launch event with xdm data
-                self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent)
+                self.dispatch(.applicationLaunch, xdm: launchXDM, parentEvent: parentEvent)
             }
 
-            //self.persistAppVersion()
-            self.persistSessionContext()
+            // Persist current launch context (overwrite previous)
+            self.persistLaunchContext()
         }
     }
 
@@ -102,13 +103,13 @@ class LifecycleV2 {
             // get start date from cache/presistence
             let startDate = self.dataStoreCache.getAppStartDate()
 
-            var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
-            previousSessionContext.closeDate = pauseDate
-            previousSessionContext.startDate = startDate
+            var previousLaunchContext: LifecycleV2PersistedContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_LAUNCH_CONTEXT) ?? LifecycleV2PersistedContext()
+            previousLaunchContext.closeDate = pauseDate
+            previousLaunchContext.startDate = startDate
 
-            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: pauseDate, isCloseUnknown: false) {
+            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousContext: previousLaunchContext, fallbackCloseDate: pauseDate, isCloseUnknown: false) {
                 // dispatch application close event with xdm data
-                self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
+                self.dispatch(.applicationClose, xdm: closeXDM, parentEvent: parentEvent)
             }
         }
     }
@@ -118,8 +119,7 @@ class LifecycleV2 {
     ///   - parentEvent: The triggering event for lifecycle
     ///   - sessionInfo: Previous session information used to construct close event
     ///   - isInstall: Indicates whether this is an application install scenario
-    ///   - sessionEventData:Lifecycle metrics to include in launch event as free-form data.
-    func handleSessionStart(parentEvent: Event, sessionInfo: LifecycleSessionInfo, isInstall: Bool, sessionEventData: [String: Any]?) {
+    func handleSessionStart(parentEvent: Event, sessionInfo: LifecycleSessionInfo, isInstall: Bool) {
         let date = parentEvent.timestamp
 
         // On first launch, don't dispatch close event
@@ -134,23 +134,24 @@ class LifecycleV2 {
             let calculatedCloseDate = Date(timeIntervalSince1970: (date.timeIntervalSince1970 - 1 ))
             let fallbackDate = (isCloseUnknown ? self.dataStoreCache.getCloseDate() : pauseDate) ?? calculatedCloseDate
 
-            var previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2SessionContext()
+            var previousSessionContext: LifecycleV2PersistedContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT) ?? LifecycleV2PersistedContext()
             previousSessionContext.startDate = startDate
             previousSessionContext.closeDate = pauseDate
 
-            if let closeXDM = self.xdmMetricsBuilder.buildAppCloseXDMData(previousSessionContext: previousSessionContext, fallbackCloseDate: fallbackDate, isCloseUnknown: isCloseUnknown) {
+            if let closeXDM = self.xdmMetricsBuilder.buildSessionCloseXDMData(previousContext: previousSessionContext, fallbackCloseDate: fallbackDate, isCloseUnknown: isCloseUnknown) {
                 // dispatch application close event with xdm data
-                self.dispatchApplicationClose(xdm: closeXDM, parentEvent: parentEvent)
+                self.dispatch(.sessionClose, xdm: closeXDM, parentEvent: parentEvent)
             }
         }
 
         // Send launch event for new session
-        if let launchXDM = self.xdmMetricsBuilder.buildAppLaunchXDMData(launchDate: date, isInstall: isInstall, isUpgrade: self.isUpgrade()) {
+        let isUpgrade = self.isUpgrade(previousContext: dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT))
+        if let launchXDM = self.xdmMetricsBuilder.buildSessionStartXDMData(launchDate: date, isInstall: isInstall, isUpgrade: isUpgrade) {
             // dispatch application launch event with xdm data
-            self.dispatchApplicationLaunch(xdm: launchXDM, parentEvent: parentEvent, analyticsContextData: sessionEventData)
+            self.dispatch(.sessionStart, xdm: launchXDM, parentEvent: parentEvent)
         }
 
-        // Save app version for isUpgrade checks
+        // Persist previous session context
         self.persistSessionContext()
     }
 
@@ -167,50 +168,75 @@ class LifecycleV2 {
         return prevAppStartTS <= 0 || prevAppStartTS > prevAppPauseTS
     }
 
-    /// Dispatches a Lifecycle application launch event with appropriate event data
-    /// - Parameters:
-    ///   - xdm: xdm data for the application launch event
-    ///   - parentEvent: the triggering lifecycle event
-    private func dispatchApplicationLaunch(xdm: [String: Any], parentEvent: Event, analyticsContextData: [String: Any]? = nil) {
+//    private func dispatchSessionStart(xdm: [String: Any], parentEvent: Event) {
+//        var eventData: [String: Any] = [:]
+//        eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
+//
+//        // Add additionalContextData passed to lifecycleStart API as free form data
+//        if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
+//            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
+//        }
+//
+//        let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_START, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
+//        dispatch(applicationLaunchEvent)
+//    }
+//
+//    /// Dispatches a Lifecycle application launch event with appropriate event data
+//    /// - Parameters:
+//    ///   - xdm: xdm data for the application launch event
+//    ///   - parentEvent: the triggering lifecycle event
+//    private func dispatchApplicationLaunch(xdm: [String: Any], parentEvent: Event) {
+//        var eventData: [String: Any] = [:]
+//        eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
+//
+//        // Add additionalContextData passed to lifecycleStart API as free form data
+//        if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
+//            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
+//        }
+//
+//        let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_LAUNCH, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
+//        dispatch(applicationLaunchEvent)
+//    }
+//
+//    /// Dispatches a Lifecycle application close event with appropriate event data
+//    /// - Parameters:
+//    ///   - xdm: xdm data for the application close event
+//    ///   - parentEvent: the triggering lifecycle event
+//    private func dispatchApplicationClose(xdm: [String: Any], parentEvent: Event) {
+//        let eventData: [String: Any] = [
+//            LifecycleV2Constants.EventDataKeys.XDM: xdm
+//        ]
+//
+//        let applicationCloseEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: eventData)
+//        dispatch(applicationCloseEvent)
+//    }
+//
+//    private func dispatchSessionClose(xdm: [String: Any], parentEvent: Event) {
+//        let eventData: [String: Any] = [
+//            LifecycleV2Constants.EventDataKeys.XDM: xdm
+//        ]
+//
+//        let applicationCloseEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: eventData)
+//        dispatch(applicationCloseEvent)
+//    }
+
+    private func dispatch(_ eventType: LifecycleV2EventType, xdm: [String: Any], parentEvent: Event) {
         var eventData: [String: Any] = [:]
         eventData[LifecycleV2Constants.EventDataKeys.XDM] = xdm
 
-        var additionalLifecycleData: [String: Any] = [:]
-        // Add additional free form date. Typically this will be "__adobe.analytics.contextData"
-        if let analyticsContextData = analyticsContextData, !analyticsContextData.isEmpty {
-            additionalLifecycleData.merge(analyticsContextData) { (_, new) in new }
-        }
-
         // Add additionalContextData passed to lifecycleStart API as free form data
         if let freeFormData = parentEvent.additionalData, !freeFormData.isEmpty {
-            additionalLifecycleData.merge(freeFormData) { (_, new) in new }
+            eventData[LifecycleV2Constants.EventDataKeys.DATA] = freeFormData
         }
 
-        if !additionalLifecycleData.isEmpty {
-            eventData[LifecycleV2Constants.EventDataKeys.DATA] = additionalLifecycleData
-        }
-
-        let applicationLaunchEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_LAUNCH, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: eventData)
-        dispatch(applicationLaunchEvent)
-    }
-
-    /// Dispatches a Lifecycle application close event with appropriate event data
-    /// - Parameters:
-    ///   - xdm: xdm data for the application close event
-    ///   - parentEvent: the triggering lifecycle event
-    private func dispatchApplicationClose(xdm: [String: Any], parentEvent: Event) {
-        let eventData: [String: Any] = [
-            LifecycleV2Constants.EventDataKeys.XDM: xdm
-        ]
-
-        let applicationCloseEvent = parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: eventData)
-        dispatch(applicationCloseEvent)
+        let event = eventType.buildEvent(data: eventData, parentEvent: parentEvent)
+        dispatch(event)
     }
 
     /// - Returns: Bool indicating whether the app has been upgraded
-    private func isUpgrade() -> Bool {
-        if let previousSessionContext: LifecycleV2SessionContext = dataStore.getObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT),
-            let previousAppVersion = previousSessionContext.applicationVersion {
+    private func isUpgrade(previousContext: LifecycleV2PersistedContext?) -> Bool {
+        if let previousContext = previousContext,
+            let previousAppVersion = previousContext.applicationVersion {
             let currentAppVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
             return previousAppVersion != currentAppVersion
         }
@@ -219,20 +245,28 @@ class LifecycleV2 {
     }
 
     /// Persist the application version into dataStore
-    private func persistAppVersion() {
-        // TODO remove func
-        let currentAppVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
-        dataStore.set(key: LifecycleV2Constants.DataStoreKeys.LAST_APP_VERSION, value: currentAppVersion)
-    }
+//    private func persistAppVersion() {
+//        // TODO remove func
+//        let currentAppVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
+//        dataStore.set(key: LifecycleV2Constants.DataStoreKeys.LAST_APP_VERSION, value: currentAppVersion)
+//    }
 
     private func persistSessionContext() {
-        var sessionContext = LifecycleV2SessionContext()
+        persistContext(for: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT)
+    }
+
+    private func persistLaunchContext() {
+        persistContext(for: LifecycleV2Constants.DataStoreKeys.LAST_LAUNCH_CONTEXT)
+    }
+
+    private func persistContext(for key: String) {
+        var sessionContext = LifecycleV2PersistedContext()
         sessionContext.applicationName = systemInfoService.getApplicationName()
         sessionContext.applicationVersion = LifecycleV2.getAppVersion(systemInfoService: systemInfoService)
         sessionContext.operatingSystem = systemInfoService.getOperatingSystemName()
         sessionContext.operatingSystemVersion = systemInfoService.getOperatingSystemVersion()
 
-        dataStore.setObject(key: LifecycleV2Constants.DataStoreKeys.LAST_SESSION_CONTEXT, value: sessionContext)
+        dataStore.setObject(key: key, value: sessionContext)
     }
 
     /// Returns the application version in the format appVersion (versionCode). Example: 2.3 (10)
@@ -245,7 +279,7 @@ class LifecycleV2 {
 }
 
 /// A container struct to easily serialize lifecycle session context information
-struct LifecycleV2SessionContext: Codable {
+struct LifecycleV2PersistedContext: Codable {
     /// Last known application name.
     var applicationName: String?
 
@@ -265,4 +299,24 @@ struct LifecycleV2SessionContext: Codable {
     var closeDate: Date?
 
     init() {}
+}
+
+enum LifecycleV2EventType: String {
+    case sessionStart
+    case sessionClose
+    case applicationLaunch
+    case applicationClose
+
+    func buildEvent(data: [String: Any], parentEvent: Event) -> Event {
+        switch self {
+        case .applicationLaunch:
+            return parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_LAUNCH, type: EventType.lifecycle, source: EventSource.applicationLaunch, data: data)
+        case .applicationClose:
+            return parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.APPLICATION_CLOSE, type: EventType.lifecycle, source: EventSource.applicationClose, data: data)
+        case .sessionStart:
+            return parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_START, type: EventType.lifecycle, source: "com.adobe.eventSource.applicationSessionStart", data: data)
+        case .sessionClose:
+            return parentEvent.createChainedEvent(name: LifecycleV2Constants.EventNames.SESSION_CLOSE, type: EventType.lifecycle, source: "com.adobe.eventSource.applicationSessionClose", data: data)
+        }
+    }
 }
